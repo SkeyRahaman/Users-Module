@@ -1,0 +1,21 @@
+from fastapi import FastAPI
+from .database import Base
+from .database import engine
+from datetime import datetime,timezone
+from app.config import Config
+
+app = FastAPI(
+    title="Users Module",
+    description="Endpoints related to users authentications and authorizations.",
+    version=Config.VERSION
+)
+Base.metadata.create_all(engine)
+
+@app.get(f"{Config.URL_PREFIX}/health")
+async def health_check():
+    print(Base.metadata.tables.keys())
+    return {
+            "status": "HEALTHY",
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "version": Config.VERSION
+        }
