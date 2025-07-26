@@ -15,7 +15,8 @@ class TestPermissionModel:
         assert perm.name == "create_user"
         assert perm.is_deleted is False
         assert perm.created is not None
-        assert perm.updated is None
+        assert perm.updated is not None
+        assert perm.created == perm.updated
 
     def test_unique_permission_name(self, db_session):
         p1 = Permission(name="delete_post")
