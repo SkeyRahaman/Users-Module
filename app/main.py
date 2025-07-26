@@ -3,6 +3,7 @@ from .database import Base
 from .database import engine
 from datetime import datetime,timezone
 from app.config import Config
+from app.api.routers import users, auth
 
 app = FastAPI(
     title="Users Module",
@@ -11,7 +12,10 @@ app = FastAPI(
 )
 Base.metadata.create_all(engine)
 
-@app.get(f"{Config.URL_PREFIX}/health")
+app.include_router(users.router)
+app.include_router(auth.router)
+
+@app.get(f"{Config.URL_PREFIX}/health", name="health")
 async def health_check():
     print(Base.metadata.tables.keys())
     return {

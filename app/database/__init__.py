@@ -14,11 +14,3 @@ from .group import Group
 from .permission import Permission
 from .role import Role
 from .user import User
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        

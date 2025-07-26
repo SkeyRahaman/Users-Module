@@ -27,7 +27,7 @@ class User(Base):
     
     # Timestamps
     created = Column(DateTime(timezone=True), server_default=func.now())
-    updated = Column(DateTime(timezone=True), onupdate=func.now())
+    updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     roles = relationship(
