@@ -19,7 +19,8 @@ class TestRoleModel:
         assert role.name == "admin"
         assert role.is_deleted is False
         assert role.created is not None
-        assert role.updated is None
+        assert role.updated is not None
+        assert role.created == role.updated
 
     def test_unique_role_name_constraint(self, db_session):
         r1 = Role(name="moderator")
