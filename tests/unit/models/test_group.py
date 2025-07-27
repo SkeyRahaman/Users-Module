@@ -16,7 +16,8 @@ class TestGroupModel:
         assert group.name == "engineering"
         assert group.is_deleted is False
         assert group.created is not None
-        assert group.updated is None
+        assert group.updated is not None
+        assert group.updated == group.created
 
     def test_group_name_unique_constraint(self, db_session):
         g1 = Group(name="finance")
