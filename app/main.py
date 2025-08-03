@@ -14,9 +14,9 @@ Base.metadata.create_all(engine)
 
 app.include_router(users.router)
 app.include_router(auth.router)
-app.include_router(permissions.router)
-app.include_router(groups.router)
-app.include_router(roles.router)
+# app.include_router(permissions.router)
+# app.include_router(groups.router)
+# app.include_router(roles.router)
 
 
 @app.get(f"{Config.URL_PREFIX}/health", name="health")
