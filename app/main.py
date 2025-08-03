@@ -14,6 +14,7 @@ Base.metadata.create_all(engine)
 
 app.include_router(users.router)
 app.include_router(auth.router)
+# will make these available in later updates.
 # app.include_router(permissions.router)
 # app.include_router(groups.router)
 # app.include_router(roles.router)
