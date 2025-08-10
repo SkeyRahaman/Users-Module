@@ -9,5 +9,5 @@ class Config:
     TOKEN_ALGORITHM = os.getenv("TOKEN_ALGORITHM","HS256")
 
 
-    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL","sqlite:///./mydatabase-test.db")
+    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL","sqlite+aiosqlite:///./test.db")
     

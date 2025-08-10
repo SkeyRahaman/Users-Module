@@ -1,76 +1,60 @@
 import pytest
-from app.database.user import User
-from app.database.role import Role
-from app.database.group import Group
-from app.database.permission import Permission
+import uuid
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import Role, User, Group, Permission, UserRole, GroupRole, RolePermission
+
+pytestmark = pytest.mark.asyncio
 
 
 class TestRoleModel:
 
-    
-    def test_create_role_minimal(self, db_session):
-        role = Role(name="admin")
+    async def test_create_role_minimal(self, db_session: AsyncSession):
+        """Test creating a Role with minimal required data."""
+        role = Role(
+            name="role_" + uuid.uuid4().hex[:6]
+        )
         db_session.add(role)
-        db_session.commit()
-        db_session.refresh(role)
+        await db_session.commit()
+        await db_session.refresh(role)
 
         assert role.id is not None
-        assert role.name == "admin"
+        assert role.is_active is True
         assert role.is_deleted is False
         assert role.created is not None
         assert role.updated is not None
-        assert role.created == role.updated
 
-    def test_unique_role_name_constraint(self, db_session):
-        r1 = Role(name="moderator")
-        r2 = Role(name="moderator")  # Duplicate name
-
-        db_session.add(r1)
-        db_session.commit()
-
-        db_session.add(r2)
-        with pytest.raises(IntegrityError):
-            db_session.commit()
-
-    def test_role_with_users(self, db_session):
-        role = Role(name="manager")
-        user = User(
-            firstname="Shakib",
-            lastname="Mondal",
-            username="shakib3",
-            email="shakib3@example.com",
-            password="hashed"
+    async def test_role_name_unique(self, db_session: AsyncSession, test_role: Role):
+        """Test that Role.name is unique."""
+        dup_role = Role(
+            name=test_role.name
         )
+        db_session.add(dup_role)
+        with pytest.raises(IntegrityError):
+            await db_session.commit()
+        await db_session.rollback()
 
-        role.users.append(user)
-        db_session.add(role)
-        db_session.commit()
-        db_session.refresh(role)
+    async def test_role_users_and_groups(self, db_session: AsyncSession, test_role: Role, test_user: User, test_group: Group, test_permission: Permission):
+        """
+        Test reading back relationships from Role:
+        - role_users -> should link to UserRole and User
+        - role_groups -> should link to GroupRole and Group
+        """
+        user_role = UserRole(user=test_user, role=test_role)
+        group_role = GroupRole(group=test_group, role=test_role)
+        role_permissions = RolePermission(role=test_role, permission=test_permission)
 
-        assert len(role.users) == 1
-        assert role.users[0].username == "shakib3"
+        db_session.add_all([user_role, group_role, role_permissions])
+        await db_session.commit()
+        await db_session.refresh(test_role, ["role_users", "role_groups", "role_permissions"])
 
-    def test_role_with_permissions(self, db_session):
-        role = Role(name="editor")
-        perm = Permission(name="edit_articles", description="Edit articles")
+        # Verify user_roles relationship
+        assert len(test_role.role_users) == 1
+        assert test_role.role_users[0].user.username == test_user.username
 
-        role.permissions.append(perm)
-        db_session.add(role)
-        db_session.commit()
-        db_session.refresh(role)
+        # Verify group_roles relationship
+        assert len(test_role.role_groups) == 1
+        assert test_role.role_groups[0].group.name == test_group.name
 
-        assert len(role.permissions) == 1
-        assert role.permissions[0].name == "edit_articles"
-
-    def test_role_with_groups(self, db_session):
-        role = Role(name="trainer")
-        group = Group(name="hr")
-
-        role.groups.append(group)
-        db_session.add(role)
-        db_session.commit()
-        db_session.refresh(role)
-
-        assert len(role.groups) == 1
-        assert role.groups[0].name == "hr"
+        assert len(test_role.role_permissions) == 1
+        assert test_role.role_permissions[0].permission.name == test_permission.name

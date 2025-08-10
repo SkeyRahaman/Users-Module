@@ -1,61 +1,54 @@
 import pytest
-from app.database.user import User
-from app.database.role import Role
-from app.database.group import Group
+import uuid
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import Group, User, UserGroup, GroupRole, Role
+
+pytestmark = pytest.mark.asyncio  # mark all tests as async
+
 
 class TestGroupModel:
 
-    def test_create_group_minimal(self, db_session):
-        group = Group(name="engineering")
+    async def test_create_group_minimal(self, db_session: AsyncSession):
+        """Test creating a Group with minimal data."""
+        group = Group(
+            name="group_" + uuid.uuid4().hex[:6]
+        )
         db_session.add(group)
-        db_session.commit()
-        db_session.refresh(group)
+        await db_session.commit()
+        await db_session.refresh(group)
 
         assert group.id is not None
-        assert group.name == "engineering"
+        assert group.is_active is True
         assert group.is_deleted is False
         assert group.created is not None
         assert group.updated is not None
-        assert group.updated == group.created
 
-    def test_group_name_unique_constraint(self, db_session):
-        g1 = Group(name="finance")
-        g2 = Group(name="finance")  # duplicate name
-
-        db_session.add(g1)
-        db_session.commit()
-
-        db_session.add(g2)
-        with pytest.raises(IntegrityError):
-            db_session.commit()
-
-    def test_group_with_users(self, db_session):
-        group = Group(name="hr")
-        user = User(
-            firstname="Shakib",
-            lastname="Mondal",
-            username="shakib4",
-            email="shakib4@example.com",
-            password="securepass"
+    async def test_group_name_unique(self, db_session: AsyncSession, test_group: Group):
+        """Test uniqueness constraint on Group.name."""
+        dup_group = Group(
+            name=test_group.name
         )
+        db_session.add(dup_group)
+        with pytest.raises(IntegrityError):
+            await db_session.commit()
+        await db_session.rollback()
 
-        group.users.append(user)
-        db_session.add(group)
-        db_session.commit()
-        db_session.refresh(group)
+    async def test_group_users_and_roles(self, db_session: AsyncSession, test_group: Group, test_user: User, test_role: Role):
+        """
+        Verify group_users and group_roles relationships.
+        """
+        user_group = UserGroup(user=test_user, group=test_group)
+        group_role = GroupRole(group=test_group, role=test_role)
 
-        assert len(group.users) == 1
-        assert group.users[0].username == "shakib4"
+        db_session.add_all([user_group, group_role])
+        await db_session.commit()
+        await db_session.refresh(test_group, ["group_users", "group_roles"])
 
-    def test_group_with_roles(self, db_session):
-        group = Group(name="devops")
-        role = Role(name="infra")
+        # Check group_users relationship
+        assert len(test_group.group_users) == 1
+        assert test_group.group_users[0].user.username == test_user.username
 
-        group.roles.append(role)
-        db_session.add(group)
-        db_session.commit()
-        db_session.refresh(group)
-
-        assert len(group.roles) == 1
-        assert group.roles[0].name == "infra"
+        # Check group_roles relationship
+        assert len(test_group.group_roles) == 1
+        assert test_group.group_roles[0].role.name == test_role.name

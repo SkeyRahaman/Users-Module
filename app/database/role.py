@@ -2,6 +2,7 @@ from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Text
 )
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from . import Base
 
 class Role(Base):
@@ -20,6 +21,11 @@ class Role(Base):
     # Timestamps
     created = Column(DateTime(timezone=True), server_default=func.now())
     updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    #relationship
+    role_users = relationship("UserRole", foreign_keys="[UserRole.role_id]", back_populates="role", lazy="selectin")
+    role_groups = relationship("GroupRole", foreign_keys="[GroupRole.role_id]", back_populates="role", lazy="selectin")
+    role_permissions = relationship("RolePermission", foreign_keys="[RolePermission.role_id]", back_populates="role", lazy="selectin")
 
     def __repr__(self):
         return f"<Role {self.name}>"

@@ -2,6 +2,7 @@ from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime
 )
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from . import Base
 
 class User(Base):
@@ -25,6 +26,10 @@ class User(Base):
     # Timestamps
     created = Column(DateTime(timezone=True), server_default=func.now())
     updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    #relationships
+    user_roles = relationship("UserRole", foreign_keys="[UserRole.user_id]", back_populates="user", lazy="selectin")
+    user_groups = relationship("UserGroup", foreign_keys="[UserGroup.user_id]", back_populates="user", lazy="selectin")
 
     def __repr__(self):
         return f"<User {self.username}>"

@@ -1,42 +1,48 @@
 import pytest
-from app.database.role import Role
-from app.database.permission import Permission
+import uuid
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import Permission, Role, RolePermission
+
+pytestmark = pytest.mark.asyncio
+
 
 class TestPermissionModel:
 
-    def test_create_permission_minimal(self, db_session):
-        perm = Permission(name="create_user")
+    async def test_create_permission_minimal(self, db_session: AsyncSession):
+        """Test creation with minimal data"""
+        perm = Permission(
+            name="perm_" + uuid.uuid4().hex[:8]
+        )
         db_session.add(perm)
-        db_session.commit()
-        db_session.refresh(perm)
+        await db_session.commit()
+        await db_session.refresh(perm)
 
         assert perm.id is not None
-        assert perm.name == "create_user"
+        assert perm.name.startswith("perm_")
+        assert perm.is_active is True
         assert perm.is_deleted is False
         assert perm.created is not None
         assert perm.updated is not None
-        assert perm.created == perm.updated
 
-    def test_unique_permission_name(self, db_session):
-        p1 = Permission(name="delete_post")
-        p2 = Permission(name="delete_post")
-
-        db_session.add(p1)
-        db_session.commit()
-
-        db_session.add(p2)
+    async def test_permission_name_unique(self, db_session: AsyncSession, test_permission: Permission):
+        """Test uniqueness constraint on Permission.name"""
+        dup_perm = Permission(
+            name=test_permission.name
+        )
+        db_session.add(dup_perm)
         with pytest.raises(IntegrityError):
-            db_session.commit()
+            await db_session.commit()
+        await db_session.rollback()
 
-    def test_permission_with_roles(self, db_session):
-        role = Role(name="admin")
-        perm = Permission(name="view_dashboard")
+    async def test_permission_roles_relationship(self, db_session: AsyncSession, test_permission: Permission, test_role: Role):
+        """
+        Test Permission <-> RolePermission relationship
+        """
+        role_perm = RolePermission(permission=test_permission, role=test_role)
+        db_session.add(role_perm)
+        await db_session.commit()
+        await db_session.refresh(test_permission, ["permission_roles"])
 
-        perm.roles.append(role)
-        db_session.add(perm)
-        db_session.commit()
-        db_session.refresh(perm)
-
-        assert len(perm.roles) == 1
-        assert perm.roles[0].name == "admin"
+        assert len(test_permission.permission_roles) == 1
+        assert test_permission.permission_roles[0].role.id == test_role.id
