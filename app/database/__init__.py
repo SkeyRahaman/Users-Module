@@ -9,8 +9,11 @@ SessionLocal = sessionmaker(autoflush=False, autocommit = False, bind=engine)
 Base = declarative_base()
 
 #tables
-from .associations import *
-from .group import Group
-from .permission import Permission
-from .role import Role
 from .user import User
+from .group import Group
+from .role import Role
+from .permission import Permission
+from .users_roles_association import UserRole
+from .users_groups_associations import UserGroup
+from .groups_roles_associations import GroupRole
+from .roles_permissions_associations import RolePermission
