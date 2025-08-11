@@ -2,7 +2,7 @@ import pytest
 import uuid
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import Role, User, Group, Permission, UserRole, GroupRole, RolePermission
+from app.database.models import Role, User, Group, Permission, UserRole, GroupRole, RolePermission
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,18 +1,19 @@
-from sqlalchemy import asc, desc
-from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from app.database.models import User
+
+from app.database.models import User,Role,Group, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
 from app.auth.password import PasswordHasher
 
 class UserService:
 
     @staticmethod
-    def create_user(db: Session, user_data: UserCreate) -> User | None:
-        if UserService.check_username_exists(db, user_data.username):
+    async def create_user(db: AsyncSession, user_data: UserCreate) -> User | None:
+        if await UserService.check_username_exists(db, user_data.username):
             return None
 
-        if UserService.check_email_exists(db, user_data.email):
+        if await UserService.check_email_exists(db, user_data.email):
             return None
 
         hashed_password = PasswordHasher.get_password_hash(user_data.password)
@@ -26,16 +27,19 @@ class UserService:
         )
         db.add(user)
         try:
-            db.commit()
-            db.refresh(user)
+            await db.commit()
+            await db.refresh(user)
             return user
         except IntegrityError:
-            db.rollback()
+            await db.rollback()
             return None
 
     @staticmethod
-    def update_user(db: Session, user_id: int, user_data: UserUpdate) -> User | None:
-        user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> User | None:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
         if not user:
             return None
 
@@ -46,65 +50,137 @@ class UserService:
                 setattr(user, field, value)
 
         try:
-            db.commit()
-            db.refresh(user)
+            await db.commit()
+            await db.refresh(user)
             return user
         except IntegrityError:
-            db.rollback()
+            await db.rollback()
             return None
 
     @staticmethod
-    def delete_user(db: Session, user_id: int) -> bool:
-        user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    async def delete_user(db: AsyncSession, user_id: int) -> bool:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
         if not user:
             return False
 
         user.is_deleted = True
         try:
-            db.commit()
+            await db.commit()
             return True
         except IntegrityError:
-            db.rollback()
+            await db.rollback()
             return False
 
     @staticmethod
-    def get_user_by_id(db: Session, user_id: int) -> User | None:
-        return db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
-    def get_user_by_username(db: Session, username: str) -> User | None:
-        return db.query(User).filter(User.username == username).first()
+    async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
+        result = await db.execute(
+            select(User).where(User.username == username)
+        )
+        return result.scalar_one_or_none()
 
     @staticmethod
-    def get_all_users(
-            db: Session,
-            skip: int = 0,
-            limit: int = 10,
-            sort_by: str = "created",
-            sort_order: str = "desc"
-        ) -> list[User]:
-        """
-        Retrieve a paginated and sorted list of active (non-deleted) users.
-        Returns empty list if sort field is invalid.
-        """
+    async def get_all_users(
+        db: AsyncSession,
+        skip: int = 0,
+        limit: int = 10,
+        sort_by: str = "created",
+        sort_order: str = "desc"
+    ) -> list[User]:
         if not hasattr(User, sort_by):
             return []
 
-        order_by_clause = desc(getattr(User, sort_by)) if sort_order == "desc" else asc(getattr(User, sort_by))
+        order_by_clause = (
+            desc(getattr(User, sort_by))
+            if sort_order == "desc"
+            else asc(getattr(User, sort_by))
+        )
 
-        return (
-            db.query(User)
-            .filter(User.is_deleted == False)
+        result = await db.execute(
+            select(User)
+            .where(User.is_deleted == False)
             .order_by(order_by_clause)
             .offset(skip)
             .limit(limit)
-            .all()
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def check_username_exists(db: AsyncSession, username: str) -> bool:
+        result = await db.execute(
+            select(User).where(User.username == username, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def check_email_exists(db: AsyncSession, email: str) -> bool:
+        result = await db.execute(
+            select(User).where(User.email == email, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def get_all_groups_for_user(db: AsyncSession, user_id: int) -> list[Group]:
+        """
+        Returns all non-deleted groups that the user is directly assigned to.
+        """
+        result = await db.execute(
+            select(Group)
+            .join(UserGroup, UserGroup.group_id == Group.id)
+            .where(
+                UserGroup.user_id == user_id,
+                UserGroup.is_deleted == False,
+                Group.is_deleted == False
+            )
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_all_roles_for_user(db: AsyncSession, user_id: int) -> list[Role]:
+        """
+        Returns all roles for the user:
+        - Direct roles from UserRole
+        - Roles from groups via UserGroup -> GroupRole
+        Removes duplicates.
+        """
+        # Direct roles
+        direct_roles_query = (
+            select(Role)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(
+                UserRole.user_id == user_id,
+                UserRole.is_deleted == False,
+                Role.is_deleted == False
+            )
         )
 
-    @staticmethod
-    def check_username_exists(db: Session, username: str) -> bool:
-        return db.query(User).filter(User.username == username, User.is_deleted == False).first() is not None
+        # Roles via groups
+        group_roles_query = (
+            select(Role)
+            .join(GroupRole, GroupRole.role_id == Role.id)
+            .join(UserGroup, UserGroup.group_id == GroupRole.group_id)
+            .where(
+                UserGroup.user_id == user_id,
+                UserGroup.is_deleted == False,
+                GroupRole.is_deleted == False,
+                Role.is_deleted == False
+            )
+        )
 
-    @staticmethod
-    def check_email_exists(db: Session, email: str) -> bool:
-        return db.query(User).filter(User.email == email, User.is_deleted == False).first() is not None
+        # Execute queries
+        direct_roles_result = await db.execute(direct_roles_query)
+        group_roles_result = await db.execute(group_roles_query)
+
+        # Combine and ensure unique Role IDs
+        all_roles = {role.id: role for role in (direct_roles_result.scalars().all() + group_roles_result.scalars().all())}
+
+        return list(all_roles.values())
