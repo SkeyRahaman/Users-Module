@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.services.role_service import RoleService
+from app.database.services.role_service import RoleService
 from app.schemas.role import RoleCreate, RoleUpdate
-from app.database.role import Role
+from app.database.models import Role
 
 class TestRoleService:
     """Test class for RoleService"""

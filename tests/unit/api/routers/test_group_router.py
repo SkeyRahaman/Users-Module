@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
 from app.api.routers import groups as group_router
-from app.services.group_service import GroupService
+from app.database.services.group_service import GroupService
 from app.schemas.group import GroupCreate, GroupUpdate
 
 # --- Fixtures ---

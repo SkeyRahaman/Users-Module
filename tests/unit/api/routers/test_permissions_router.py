@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
 from app.api.routers import permissions as permission_router
-from app.services.permission_service import PermissionService
+from app.database.services.permission_service import PermissionService
 from app.schemas.permission import PermissionCreate, PermissionUpdate
 
 # --- Fixtures ---

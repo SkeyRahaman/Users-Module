@@ -1,7 +1,7 @@
 import pytest
 from app.schemas.user import UserCreate, UserUpdate
-from app.services.user_service import UserService
-from app.database.user import User
+from app.database.services.user_service import UserService
+from app.database.models import User
 
 
 class TestUserService:

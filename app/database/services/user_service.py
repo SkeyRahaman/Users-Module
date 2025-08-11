@@ -1,7 +1,7 @@
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.database.user import User
+from app.database.models import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.auth.password import PasswordHasher
 

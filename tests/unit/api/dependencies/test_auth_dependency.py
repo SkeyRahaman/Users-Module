@@ -5,8 +5,8 @@ from fastapi import HTTPException
 
 from app.api.dependencies.auth import create_access_token, get_current_user
 from app.config import Config
-from app.database.user import User
-from app.services.user_service import UserService
+from app.database.models import User
+from app.database.services.user_service import UserService
 
 class TestAuth:
 

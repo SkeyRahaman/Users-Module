@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user
 from app.schemas.permission import PermissionCreate, PermissionUpdate, PermissionOut
-from app.services.permission_service import PermissionService
-from app.database.user import User
+from app.database.services.permission_service import PermissionService
+from app.database.models import User
 
 router = APIRouter(
     prefix="/permissions", 

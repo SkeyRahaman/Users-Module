@@ -4,7 +4,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.database import get_db
-from app.services.user_service import UserService
+from app.database.services.user_service import UserService
 from app.auth.password import PasswordHasher
 from app.api.dependencies.auth import create_access_token
 

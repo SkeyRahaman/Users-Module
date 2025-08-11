@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.services.group_service import GroupService
+from app.database.services.group_service import GroupService
 from app.schemas.group import GroupCreate, GroupUpdate
-from app.database.group import Group
+from app.database.models import Group
 
 class TestGroupService:
     """Test class for GroupService"""

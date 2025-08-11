@@ -1,11 +1,7 @@
 # tests/integration/test_user_group_role_permission.py
 
 import pytest
-from app.database.user import User
-from app.database.group import Group
-from app.database.role import Role
-from app.database.permission import Permission
-
+from app.database.models import User, Group, Role, Permission
 
 class TestUserGroupRolePermissionIntegration:
 

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user
 from app.schemas.group import GroupCreate, GroupUpdate, GroupOut
-from app.services.group_service import GroupService
-from app.database.user import User
+from app.database.services.group_service import GroupService
+from app.database.models import User
 
 router = APIRouter(
     prefix="/groups",
