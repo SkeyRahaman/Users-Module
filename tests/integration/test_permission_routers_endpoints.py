@@ -3,7 +3,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.database.permission import Permission
+from app.database.models import Permission
 
 class TestPermissionRouter:
     def test_create_permission_success(self, client: TestClient, test_token: str):

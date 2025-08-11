@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.services.permission_service import PermissionService
+from app.database.services.permission_service import PermissionService
 from app.schemas.permission import PermissionCreate, PermissionUpdate
-from app.database.permission import Permission
+from app.database.models import Permission
 
 class TestPermissionService:
     """Test class for PermissionService"""

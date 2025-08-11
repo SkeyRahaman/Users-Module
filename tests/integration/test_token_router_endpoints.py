@@ -2,7 +2,7 @@ from fastapi import status
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 
-from app.database.user import User
+from app.database.models import User
 from app.main import app
 from app.api.dependencies.database import get_db
 

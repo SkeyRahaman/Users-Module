@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.api.routers import users as users_router
 from app.schemas.user import UserCreate, UserUpdate, UserOut
-from app.database.user import User
-from app.services.user_service import UserService
+from app.database.models import User
+from app.database.services.user_service import UserService
 
 @pytest.fixture
 def mock_current_user():

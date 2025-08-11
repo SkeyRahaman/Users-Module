@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
 from app.api.routers import auth as auth_router
-from app.services.user_service import UserService
+from app.database.services.user_service import UserService
 from app.auth.password import PasswordHasher
 
 # --- Fixtures ---

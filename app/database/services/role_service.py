@@ -1,7 +1,7 @@
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.database.role import Role
+from app.database.models import Role
 from app.schemas.role import RoleCreate, RoleUpdate
 
 class RoleService:

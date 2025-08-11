@@ -3,7 +3,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.database.user import User
+from app.database.models import User
 
 class TestUsersRouter:
     def test_create_user_success(self, client: TestClient):

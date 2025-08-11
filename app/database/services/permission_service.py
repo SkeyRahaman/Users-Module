@@ -1,7 +1,7 @@
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.database.permission import Permission
+from app.database.models import Permission
 from app.schemas.permission import PermissionCreate, PermissionUpdate
 
 class PermissionService:

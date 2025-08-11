@@ -1,7 +1,7 @@
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.database.group import Group
+from app.database.models import Group
 from app.schemas.group import GroupCreate, GroupUpdate
 
 class GroupService:

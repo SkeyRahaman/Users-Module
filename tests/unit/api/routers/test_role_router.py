@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
 from app.api.routers import roles as role_router
-from app.services.role_service import RoleService
+from app.database.services.role_service import RoleService
 from app.schemas.role import RoleCreate, RoleUpdate
 
 # --- Fixtures ---

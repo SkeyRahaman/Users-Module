@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user
 from app.schemas.role import RoleCreate, RoleUpdate, RoleOut
-from app.services.role_service import RoleService
-from app.database.user import User
+from app.database.services.role_service import RoleService
+from app.database.models import User
 
 router = APIRouter(
     prefix="/roles", 
