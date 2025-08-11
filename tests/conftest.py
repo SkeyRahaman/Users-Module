@@ -4,7 +4,7 @@
 # from fastapi.testclient import TestClient
 
 # from app.main import app
-# from app.database import Base
+# from app.database.models import Base
 # from app.config import Config
 # from app.database.models import User
 # from app.auth.password import PasswordHasher
