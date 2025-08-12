@@ -10,4 +10,8 @@ class Config:
 
 
     TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL","sqlite+aiosqlite:///./test.db")
+
+    DEFAULT_USER_ROLE_VALIDITY = 30
+    DEFAULT_USER_GROUP_VALIDITY = 30
+    DEFAULT_GROUP_ROLE_VALIDITY = 30
     
