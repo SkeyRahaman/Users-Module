@@ -30,3 +30,12 @@ def mock_role():
     role.description = "Test description"
     role.is_deleted = False
     return role
+
+@pytest.fixture
+def mock_group():
+    group = MagicMock()
+    group.id = 1
+    group.name = "test_group"
+    group.description = "Test description"
+    group.is_deleted = False
+    return group
