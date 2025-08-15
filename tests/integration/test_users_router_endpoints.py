@@ -1,91 +1,94 @@
 import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 from app.main import app
 from app.database.models import User
+from app.config import Config
+from app.auth.password_hash import PasswordHasher
 
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("setup_database", "override_get_db")
 class TestUsersRouter:
-    def test_create_user_success(self, client: TestClient):
-        # Get URL by route name
+
+    async def test_create_user_success(self, client: AsyncClient):
         url = app.url_path_for("create_user")
-        
-        response = client.post(
+
+        response = await client.post(
             url,
             json={
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "testuser",
-                "email": "test@example.com",
-                "password": "secure123"
+                "firstname": Config.TEST_USER["firstname"],
+                "lastname": Config.TEST_USER["lastname"],
+                "username": Config.TEST_USER['username'],
+                "email": Config.TEST_USER['email'],
+                "password": PasswordHasher.get_password_hash(Config.TEST_USER['password']),
             }
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert "id" in response.json()
 
-    def test_get_current_user(self, client: TestClient, test_user: User, test_token: str):
+    async def test_get_current_user(self, client: AsyncClient, test_user: User, token: str):
         url = app.url_path_for("get_me")
-        
-        response = client.get(
+
+        response = await client.get(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["username"] == test_user.username
 
-    def test_update_current_user(self, client: TestClient, test_user: User, test_token: str):
+    async def test_update_current_user(self, client: AsyncClient, test_user: User, token: str):
         url = app.url_path_for("put_me")
-        
-        response = client.put(
+
+        response = await client.put(
             url,
             json={"email": "updated@example.com"},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["email"] == "updated@example.com"
 
-    def test_delete_current_user(self, client: TestClient, test_user: User, test_token: str):
+    async def test_delete_current_user(self, client: AsyncClient, test_user: User, token: str):
         url = app.url_path_for("delete_me")
-        
-        response = client.delete(
+
+        response = await client.delete(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_202_ACCEPTED
         assert response.json()["Message"] == "User Deleted."
 
-    def test_get_user_by_id(self, client: TestClient, test_user: User, test_token: str):
+    async def test_get_user_by_id(self, client: AsyncClient, test_user: User, token: str):
         url = app.url_path_for("get_by_id", id=test_user.id)
-        
-        response = client.get(
+
+        response = await client.get(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["id"] == test_user.id
 
     # Error cases
-    def test_create_user_duplicate(self, client: TestClient, test_user: User):
+    async def test_create_user_duplicate(self, client: AsyncClient, test_user: User):
         url = app.url_path_for("create_user")
-        
-        response = client.post(
+
+        response = await client.post(
             url,
             json={
                 "firstname": "Test",
                 "lastname": "User",
-                "username": "test_username",
-                "email": "username@example.com",
+                "username": test_user.username,
+                "email": test_user.email,
                 "password": "secure123"
             }
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_get_nonexistent_user(self, client: TestClient, test_token: str):
+    async def test_get_nonexistent_user(self, client: AsyncClient, token: str):
         url = app.url_path_for("get_by_id", id=999999)
-        
-        response = client.get(
+
+        response = await client.get(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
-        print(response.json())
         assert response.status_code == status.HTTP_404_NOT_FOUND

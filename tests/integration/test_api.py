@@ -1,17 +1,14 @@
+import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
 from app.config import Config
-from app.main import app
 
-def test_health_check_success(client: TestClient):
-    # Act
-    response = client.get(app.url_path_for("health"))
-    
-    # Assert
+@pytest.mark.asyncio
+async def test_health_check_success(client):
+    response = await client.get(f"{Config.URL_PREFIX}/health")
     assert response.status_code == status.HTTP_200_OK
-    
-    response_data = response.json()
-    assert response_data["status"] == "HEALTHY"
-    assert "version" in response_data
-    assert response_data["version"] == Config.VERSION
-    
+
+    data = response.json()
+    assert data["status"] == "HEALTHY"
+    assert "timestamp" in data
+    assert "version" in data
+    assert data["version"] == Config.VERSION
