@@ -1,63 +1,63 @@
 import pytest
+from unittest.mock import MagicMock
 from datetime import timedelta
-from jose import jwt
 from fastapi import HTTPException
 
 from app.api.dependencies.auth import create_access_token, get_current_user
-from app.config import Config
-from app.database.models import User
+from app.auth.jwt import JWTManager
 from app.database.services.user_service import UserService
 
-class TestAuth:
 
-    @pytest.fixture(autouse=True)
-    def _setup_dummy_user(self):
-        self.dummy_user = User(
-            id=1,
-            firstname="John",
-            lastname="Doe",
-            middlename=None,
-            username="johndoe",
-            email="john@example.com",
-            password="hashedpassword",
-            is_active=True,
-            is_verified=True,
-            is_deleted=False,
+class TestAuthDeps:
+    def test_create_access_token_and_decode(self, test_user):
+        """create_access_token should return a JWT that decodes back to the original payload"""
+        payload = {"sub": test_user["username"]}
+        token = create_access_token(payload, expire_delta=timedelta(minutes=5))
+
+        decoded = JWTManager.decode(token, audience="your-audience-identifier")
+        assert decoded["sub"] == test_user["username"]
+
+    def test_get_current_user_success(self, monkeypatch, test_user):
+        """get_current_user should return a valid user object if token is valid"""
+
+        # Mock DB and service
+        mock_db = MagicMock()
+        mock_user = MagicMock()
+        mock_user.username = test_user["username"]
+
+        monkeypatch.setattr(UserService, "get_user_by_username", lambda db, username: mock_user)
+
+        # Create & validate
+        token = create_access_token({"sub": test_user["username"]})
+        user = get_current_user(token=token, db=mock_db)
+
+        assert user.username == test_user["username"]
+
+    def test_get_current_user_expired_token(self, monkeypatch, test_user):
+        """Should raise HTTPException when token is expired"""
+        expired_token = create_access_token(
+            {"sub": test_user["username"]},
+            expire_delta=timedelta(minutes=-6)
         )
 
-    @pytest.fixture
-    def token(self):
-        return create_access_token(
-            data={"sub": self.dummy_user.username},
-            expire_delta=timedelta(minutes=15)
-        )
-
-    def test_create_access_token_encodes_payload_correctly(self, token):
-        decoded = jwt.decode(token, Config.SECRET_KEY, algorithms=[Config.TOKEN_ALGORITHM])
-        assert decoded.get("sub") == self.dummy_user.username
-        assert "exp" in decoded
-
-    def test_get_current_user_valid_token(self, mocker, token, db_session):
-        mocker.patch.object(UserService, "get_user_by_username", return_value=self.dummy_user)
-
-        user = get_current_user(token=token, db=db_session)
-
-        assert user.username == self.dummy_user.username
-        assert user.email == self.dummy_user.email
-
-    def test_get_current_user_invalid_token_raises(self):
-        invalid_token = "this.is.invalid.token"
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user(token=invalid_token, db=None)
-
+            get_current_user(token=expired_token, db=MagicMock())
         assert exc_info.value.status_code == 401
-        assert "Could not validate credentials" in str(exc_info.value.detail)
+        assert "expired" in exc_info.value.detail.lower()
 
-    def test_get_current_user_user_not_found(self, mocker, token, db_session):
-        mocker.patch.object(UserService, "get_user_by_username", return_value=None)
+    def test_get_current_user_invalid_token(self):
+        """Should raise HTTPException when token is invalid (corrupted)"""
+        invalid_token = "this.is.not.a.valid.jwt"
 
         with pytest.raises(HTTPException) as exc_info:
-            get_current_user(token=token, db=db_session)
-
+            get_current_user(token=invalid_token, db=MagicMock())
         assert exc_info.value.status_code == 401
-        assert "Could not validate credentials" in str(exc_info.value.detail)
+
+    def test_get_current_user_user_not_found(self, monkeypatch, test_user):
+        """Should raise HTTPException if user not found in DB"""
+        monkeypatch.setattr(UserService, "get_user_by_username", lambda *args, **kwargs: None)
+
+        token = create_access_token({"sub": test_user["username"]})
+        with pytest.raises(HTTPException) as exc_info:
+            get_current_user(token=token, db=MagicMock())
+        assert exc_info.value.status_code == 401
