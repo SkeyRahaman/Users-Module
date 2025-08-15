@@ -1,136 +1,90 @@
 import pytest
 from fastapi import HTTPException, status
-from unittest.mock import Mock, patch
-from sqlalchemy.orm import Session
+from unittest.mock import AsyncMock, MagicMock, patch
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers import roles as role_router
 from app.database.services.role_service import RoleService
 from app.schemas.role import RoleCreate, RoleUpdate
 
-# --- Fixtures ---
-@pytest.fixture
-def mock_db():
-    return Mock(spec=Session)
-
-@pytest.fixture
-def mock_role():
-    role = Mock()
-    role.id = 1
-    role.name = "test_role"
-    role.description = "Test description"
-    role.is_deleted = False
-    return role
-
-# --- Tests ---
+@pytest.mark.asyncio
 class TestRoleRouter:
-    def test_create_role_success(self, mock_db, mock_role):
-        # Arrange
-        with patch.object(RoleService, "create_role", return_value=mock_role):
+
+    async def test_create_role_success(self, mock_db, mock_role):
+        with patch.object(RoleService, "create_role", new_callable=AsyncMock, return_value=mock_role):
             role_data = RoleCreate(
                 name="test_role",
                 description="Test description"
             )
-            
-            # Act
-            result = role_router.create_role(role_data, mock_db, Mock())
-            
-            # Assert
+            result = await role_router.create_role(role_data, mock_db, MagicMock())
             assert result.id == 1
             assert result.name == "test_role"
+            RoleService.create_role.assert_awaited_once_with(mock_db, role_data)
 
-    def test_create_role_duplicate(self, mock_db):
-        # Arrange
-        with patch.object(RoleService, "create_role", return_value=None):
+    async def test_create_role_duplicate(self, mock_db):
+        with patch.object(RoleService, "create_role", new_callable=AsyncMock, return_value=None):
             role_data = RoleCreate(
                 name="duplicate",
                 description="Should fail"
             )
-            
-            # Act & Assert
             with pytest.raises(HTTPException) as exc_info:
-                role_router.create_role(role_data, mock_db, Mock())
-            
+                await role_router.create_role(role_data, mock_db, MagicMock())
             assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
             assert "already exists" in exc_info.value.detail
 
-    def test_get_role_success(self, mock_db, mock_role):
-        # Arrange
-        with patch.object(RoleService, "get_role_by_id", return_value=mock_role):
-            # Act
-            result = role_router.get_role(1, mock_db, Mock())
-            
-            # Assert
+    async def test_get_role_success(self, mock_db, mock_role):
+        with patch.object(RoleService, "get_role_by_id", new_callable=AsyncMock, return_value=mock_role):
+            result = await role_router.get_role(1, mock_db, MagicMock())
             assert result.id == 1
             assert result.name == "test_role"
+            RoleService.get_role_by_id.assert_awaited_once_with(mock_db, 1)
 
-    def test_get_role_not_found(self, mock_db):
-        # Arrange
-        with patch.object(RoleService, "get_role_by_id", return_value=None):
-            # Act & Assert
+    async def test_get_role_not_found(self, mock_db):
+        with patch.object(RoleService, "get_role_by_id", new_callable=AsyncMock, return_value=None):
             with pytest.raises(HTTPException) as exc_info:
-                role_router.get_role(999, mock_db, Mock())
-            
+                await role_router.get_role(999, mock_db, MagicMock())
             assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_update_role_success(self, mock_db, mock_role):
-        # Arrange
+    async def test_update_role_success(self, mock_db, mock_role):
         update_data = RoleUpdate(description="Updated description")
-        with patch.object(RoleService, "update_role", return_value=mock_role):
-            # Act
-            result = role_router.update_role(1, update_data, mock_db, Mock())
-            
-            # Assert
+        with patch.object(RoleService, "update_role", new_callable=AsyncMock, return_value=mock_role):
+            result = await role_router.update_role(1, update_data, mock_db, MagicMock())
             assert result.id == 1
             assert result.description == "Test description"  # Mock returns original
+            RoleService.update_role.assert_awaited_once_with(mock_db, 1, update_data)
 
-    def test_update_role_not_found(self, mock_db):
-        # Arrange
+    async def test_update_role_not_found(self, mock_db):
         update_data = RoleUpdate(description="Should fail")
-        with patch.object(RoleService, "update_role", return_value=None):
-            # Act & Assert
+        with patch.object(RoleService, "update_role", new_callable=AsyncMock, return_value=None):
             with pytest.raises(HTTPException) as exc_info:
-                role_router.update_role(999, update_data, mock_db, Mock())
-            
+                await role_router.update_role(999, update_data, mock_db, MagicMock())
             assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_delete_role_success(self, mock_db):
-        # Arrange
-        with patch.object(RoleService, "delete_role", return_value=True):
-            # Act
-            result = role_router.delete_role(1, mock_db, Mock())
-            
-            # Assert
+    async def test_delete_role_success(self, mock_db):
+        with patch.object(RoleService, "delete_role", new_callable=AsyncMock, return_value=True):
+            result = await role_router.delete_role(1, mock_db, MagicMock())
             assert result["message"] == "Role deleted"
+            RoleService.delete_role.assert_awaited_once_with(mock_db, 1)
 
-    def test_delete_role_not_found(self, mock_db):
-        # Arrange
-        with patch.object(RoleService, "delete_role", return_value=False):
-            # Act & Assert
+    async def test_delete_role_not_found(self, mock_db):
+        with patch.object(RoleService, "delete_role", new_callable=AsyncMock, return_value=False):
             with pytest.raises(HTTPException) as exc_info:
-                role_router.delete_role(999, mock_db, Mock())
-            
+                await role_router.delete_role(999, mock_db, MagicMock())
             assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_all_roles(self, mock_db, mock_role):
-        # Arrange
-        with patch.object(RoleService, "get_all_roles", return_value=[mock_role]):
-            # Act
-            result = role_router.get_all_roles(0, 10, "created", "desc", mock_db, Mock())
-            
-            # Assert
+    async def test_get_all_roles(self, mock_db, mock_role):
+        with patch.object(RoleService, "get_all_roles", new_callable=AsyncMock, return_value=[mock_role]):
+            result = await role_router.get_all_roles(0, 10, "created", "desc", mock_db, MagicMock())
             assert len(result) == 1
             assert result[0].name == "test_role"
+            RoleService.get_all_roles.assert_awaited_once()
 
-    def test_get_all_roles_pagination(self, mock_db, mock_role):
-        # Arrange
+    async def test_get_all_roles_pagination(self, mock_db, mock_role):
         mock_roles = [mock_role] * 5
-        with patch.object(RoleService, "get_all_roles", return_value=mock_roles):
-            # Act
-            result = role_router.get_all_roles(skip=2, limit=5, db=mock_db)
-            
-            # Assert
+        with patch.object(RoleService, "get_all_roles", new_callable=AsyncMock, return_value=mock_roles):
+            result = await role_router.get_all_roles(skip=2, limit=5, db=mock_db, _=MagicMock())
             assert len(result) == 5
-            RoleService.get_all_roles.assert_called_once_with(
+            RoleService.get_all_roles.assert_awaited_once_with(
                 mock_db,
                 skip=2,
                 limit=5,
@@ -138,20 +92,19 @@ class TestRoleRouter:
                 sort_order="desc"
             )
 
-    def test_get_all_roles_sorting(self, mock_db, mock_role):
-        # Arrange
+    async def test_get_all_roles_sorting(self, mock_db, mock_role):
         mock_roles = [mock_role] * 3
-        with patch.object(RoleService, "get_all_roles", return_value=mock_roles):
-            # Act
-            result = role_router.get_all_roles(
+        with patch.object(RoleService, "get_all_roles", new_callable=AsyncMock, return_value=mock_roles):
+            result = await role_router.get_all_roles(
+                skip=0,
+                limit=10,
                 sort_by="name",
                 sort_order="asc",
-                db=mock_db
+                db=mock_db,
+                _=MagicMock()
             )
-            
-            # Assert
             assert len(result) == 3
-            RoleService.get_all_roles.assert_called_once_with(
+            RoleService.get_all_roles.assert_awaited_once_with(
                 mock_db,
                 skip=0,
                 limit=10,
