@@ -39,3 +39,12 @@ def mock_group():
     group.description = "Test description"
     group.is_deleted = False
     return group
+
+@pytest.fixture
+def mock_permission():
+    permission = MagicMock()
+    permission.id = 1
+    permission.name = "test_permission"
+    permission.description = "Test description"
+    permission.is_deleted = False
+    return permission
