@@ -1,6 +1,6 @@
 import pytest
 from passlib.exc import UnknownHashError
-from app.auth.password import PasswordHasher  # Adjust import path
+from app.auth.password_hash import PasswordHasher  # Adjust import path
 
 class TestPasswordHasher:
     # ---- Positive Tests ----
