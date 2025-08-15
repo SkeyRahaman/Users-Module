@@ -1,230 +1,175 @@
 import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
-
+from httpx import AsyncClient
 from app.main import app
+from app.database.models import Group
 
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("setup_database", "override_get_db")
 class TestGroupRouter:
-    def test_create_group_success(self, client: TestClient, test_token: str):
-        # Get URL by route name
+
+    async def test_create_group_success(self, client: AsyncClient, token: str):
         url = app.url_path_for("create_group")
-        
-        response = client.post(
+
+        response = await client.post(
             url,
             json={
                 "name": "developers",
                 "description": "Development team"
             },
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert "id" in response.json()
         assert response.json()["name"] == "developers"
 
-    def test_create_duplicate_group_fails(self, client: TestClient, test_token: str):
-        # First create
+    async def test_create_duplicate_group_fails(self, client: AsyncClient, token: str, test_group: Group):
         url = app.url_path_for("create_group")
-        client.post(
+
+        response = await client.post(
             url,
             json={
-                "name": "managers",
-                "description": "Management team"
-            },
-            headers={"Authorization": f"Bearer {test_token}"}
-        )
-        
-        # Try duplicate
-        response = client.post(
-            url,
-            json={
-                "name": "managers",  # Duplicate name
+                "name": test_group.name,
                 "description": "Different description"
             },
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "already exists" in response.json()["detail"]
 
-    def test_get_group_by_id(self, client: TestClient, test_token: str):
-        # First create
-        create_url = app.url_path_for("create_group")
-        create_res = client.post(
-            create_url,
-            json={
-                "name": "qa",
-                "description": "Quality Assurance"
-            },
-            headers={"Authorization": f"Bearer {test_token}"}
-        )
-        group_id = create_res.json()["id"]
-        
-        # Now get
-        get_url = app.url_path_for("get_group", id=group_id)
-        response = client.get(
+    async def test_get_group_by_id(self, client: AsyncClient, token: str, test_group: Group):
+        get_url = app.url_path_for("get_group", id=test_group.id)
+        response = await client.get(
             get_url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["id"] == group_id
-        assert response.json()["name"] == "qa"
+        assert response.json()["id"] == test_group.id
+        assert response.json()["name"] == test_group.name
 
-    def test_get_nonexistent_group(self, client: TestClient, test_token: str):
+    async def test_get_nonexistent_group(self, client: AsyncClient, token: str):
         url = app.url_path_for("get_group", id=999999)
-        response = client.get(
+        response = await client.get(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_update_group(self, client: TestClient, test_token: str):
-        # Create first
+    async def test_update_group(self, client: AsyncClient, token: str):
         create_url = app.url_path_for("create_group")
-        create_res = client.post(
+        create_res = await client.post(
             create_url,
             json={
                 "name": "designers",
                 "description": "Original description"
             },
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         group_id = create_res.json()["id"]
-        
-        # Update
+
         update_url = app.url_path_for("update_group", id=group_id)
-        response = client.put(
+        response = await client.put(
             update_url,
             json={"description": "Updated description"},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["description"] == "Updated description"
         assert response.json()["name"] == "designers"  # Name unchanged
 
-    def test_delete_group(self, client: TestClient, test_token: str):
-        # Create first
-        create_url = app.url_path_for("create_group")
-        create_res = client.post(
-            create_url,
-            json={
-                "name": "marketing",
-                "description": "Marketing team"
-            },
-            headers={"Authorization": f"Bearer {test_token}"}
-        )
-        group_id = create_res.json()["id"]
-        
-        # Delete
-        delete_url = app.url_path_for("delete_group", id=group_id)
-        response = client.delete(
+    async def test_delete_group(self, client: AsyncClient, token: str, test_group: Group):
+        delete_url = app.url_path_for("delete_group", id=test_group.id)
+        response = await client.delete(
             delete_url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_202_ACCEPTED
         assert response.json()["message"] == "Group deleted"
-        
-        # Verify deleted
-        get_url = app.url_path_for("get_group", id=group_id)
-        get_response = client.get(
+
+        get_url = app.url_path_for("get_group", id=test_group.id)
+        get_response = await client.get(
             get_url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_all_groups(self, client: TestClient, test_token: str):
-        # Create test data
+    async def test_get_all_groups(self, client: AsyncClient, token: str):
         create_url = app.url_path_for("create_group")
         for i in range(1, 4):
-            client.post(
+            await client.post(
                 create_url,
                 json={
                     "name": f"group_{i}",
                     "description": f"Group {i}"
                 },
-                headers={"Authorization": f"Bearer {test_token}"}
+                headers={"Authorization": f"Bearer {token}"}
             )
-        
-        # Get all
+
         list_url = app.url_path_for("get_all_groups")
-        response = client.get(
+        response = await client.get(
             list_url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) >= 3  # May have other groups
+        assert len(response.json()) >= 3
         assert any(g["name"] == "group_1" for g in response.json())
 
-    def test_get_group_by_name(self, client: TestClient, test_token: str):
-        # First create
-        create_url = app.url_path_for("create_group")
-        client.post(
-            create_url,
-            json={
-                "name": "finance",
-                "description": "Finance department"
-            },
-            headers={"Authorization": f"Bearer {test_token}"}
-        )
-        
-        # Get by name
-        get_url = app.url_path_for("get_group_by_name", name="finance")
-        response = client.get(
+    async def test_get_group_by_name(self, client: AsyncClient, token: str, test_group: Group):
+        get_url = app.url_path_for("get_group_by_name", name=test_group.name)
+        response = await client.get(
             get_url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["name"] == "finance"
+        assert response.json()["name"] == test_group.name
 
-    def test_get_group_by_name_not_found(self, client: TestClient, test_token: str):
+    async def test_get_group_by_name_not_found(self, client: AsyncClient, token: str):
         url = app.url_path_for("get_group_by_name", name="nonexistent")
-        response = client.get(
+        response = await client.get(
             url,
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_all_groups_pagination(self, client: TestClient, test_token: str):
-        # Create test data
+    async def test_get_all_groups_pagination(self, client: AsyncClient, token: str):
         create_url = app.url_path_for("create_group")
         for i in range(1, 21):
-            client.post(
+            await client.post(
                 create_url,
                 json={
                     "name": f"paged_group_{i}",
                     "description": f"Group {i}"
                 },
-                headers={"Authorization": f"Bearer {test_token}"}
+                headers={"Authorization": f"Bearer {token}"}
             )
-        
-        # Get paginated results
+
         list_url = app.url_path_for("get_all_groups")
-        response = client.get(
+        response = await client.get(
             list_url,
             params={"skip": 5, "limit": 5},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 5
 
-    def test_get_all_groups_sorting(self, client: TestClient, test_token: str):
-        # Create test data with different names
+    async def test_get_all_groups_sorting(self, client: AsyncClient, token: str):
         create_url = app.url_path_for("create_group")
-        client.post(
+        await client.post(
             create_url,
             json={"name": "beta_group", "description": "Beta group"},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
-        client.post(
+        await client.post(
             create_url,
             json={"name": "alpha_group", "description": "Alpha group"},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
-        
-        # Get sorted results
+
         list_url = app.url_path_for("get_all_groups")
-        response = client.get(
+        response = await client.get(
             list_url,
             params={"sort_by": "name", "sort_order": "asc"},
-            headers={"Authorization": f"Bearer {test_token}"}
+            headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == status.HTTP_200_OK
         names = [g["name"] for g in response.json()]
