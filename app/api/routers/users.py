@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.database import get_db
 from app.schemas.user import UserCreate, UserUpdate, UserOut
@@ -9,10 +9,10 @@ from app.database.models import User
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-# 🔸 POST /users/ - Register a new user
+# 🔸 POST /users/ - Register a new user (async)
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED, name="create_user")
-def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    user = UserService.create_user(db, user_data)
+async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    user = await UserService.create_user(db, user_data)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -20,41 +20,37 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
         )
     return user
 
-
-# 🔸 GET /users/me - Get current user profile
+# 🔸 GET /users/me - Get current user profile (async)
 @router.get("/me", response_model=UserOut, name="get_me")
-def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-
-# 🔸 PUT /users/me - Update current user
+# 🔸 PUT /users/me - Update current user (async)
 @router.put("/me", response_model=UserOut, name="put_me")
-def update_me(
+async def update_me(
     user_data: UserUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return UserService.update_user(db, current_user.id, user_data)
+    return await UserService.update_user(db, current_user.id, user_data)
 
-
-# 🔸 DELETE /users/me - Soft delete current user
+# 🔸 DELETE /users/me - Soft delete current user (async)
 @router.delete("/me", status_code=status.HTTP_202_ACCEPTED, name="delete_me")
-def delete_me(
-    db: Session = Depends(get_db),
+async def delete_me(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    UserService.delete_user(db, current_user.id)
-    return {"Message" : "User Deleted."}
+    await UserService.delete_user(db, current_user.id)
+    return {"Message": "User Deleted."}
 
-
-# 🔸 GET /users/{id} - Admin only access to fetch any user
+# 🔸 GET /users/{id} - Admin only access to fetch any user (async)
 @router.get("/{id}", response_model=UserOut, name="get_by_id")
-def get_user_by_id(
+async def get_user_by_id(
     id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user)
 ):
-    user = UserService.get_user_by_id(db, id)
+    user = await UserService.get_user_by_id(db, id)
     if user:
         return user
     else:

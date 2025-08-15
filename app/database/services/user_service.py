@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database.models import User,Role,Group, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
-from app.auth.password import PasswordHasher
+from app.auth.password_hash import PasswordHasher
 
 class UserService:
 
