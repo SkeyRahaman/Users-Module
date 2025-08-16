@@ -1,8 +1,10 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, relationship
 
 from . import Base
 from .mixins import TimestampMixin, StatusMixin, NamedEntityMixin, TablenameMixin
+if TYPE_CHECKING:
+    from . import RolePermission
 
 
 class Permission(Base, TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin):

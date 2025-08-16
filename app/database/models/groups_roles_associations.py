@@ -1,9 +1,12 @@
 from sqlalchemy import Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING
 
 from .mixins import AuditMixin, ValidityMixin
 from . import Base
+if TYPE_CHECKING:
+    from . import Group, Role
 
 class GroupRole(Base, AuditMixin, ValidityMixin):
     __tablename__ = "groups_roles"

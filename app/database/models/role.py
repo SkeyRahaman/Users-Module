@@ -1,8 +1,11 @@
 from typing import List
 from sqlalchemy.orm import Mapped, relationship
+from typing import TYPE_CHECKING
 
 from . import Base
 from .mixins import TimestampMixin, StatusMixin, NamedEntityMixin, TablenameMixin
+if TYPE_CHECKING:
+    from . import UserRole, GroupRole, RolePermission
 
 class Role(Base, TablenameMixin, NamedEntityMixin, TimestampMixin, StatusMixin):
 
