@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Mapped, mapped_column, declared_attr, relationship
 from sqlalchemy import Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from . import User
 
 class TablenameMixin:
     @declared_attr

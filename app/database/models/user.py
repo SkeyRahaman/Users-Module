@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import Base
 from .mixins import TimestampMixin, StatusMixin, TablenameMixin
+if TYPE_CHECKING:
+    from . import UserRole, UserGroup
 
 class User(Base, TablenameMixin, TimestampMixin, StatusMixin):
 

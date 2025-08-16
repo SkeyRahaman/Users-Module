@@ -1,8 +1,12 @@
 from sqlalchemy import Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
 from . import Base
 from .mixins import AuditMixin, ValidityMixin
+
+if TYPE_CHECKING:
+    from . import User, Role
 
 
 class UserRole(Base, AuditMixin, ValidityMixin):

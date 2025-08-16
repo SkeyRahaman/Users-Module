@@ -1,8 +1,10 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, relationship
 
 from . import Base
 from .mixins import TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin
+if TYPE_CHECKING:
+    from . import UserGroup, GroupRole
 
 class Group(Base, TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin):
 
