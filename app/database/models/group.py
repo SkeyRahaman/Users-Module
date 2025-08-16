@@ -1,30 +1,22 @@
-from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, Text
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from typing import List
+from sqlalchemy.orm import Mapped, relationship
+
 from . import Base
+from .mixins import TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin
 
-class Group(Base):
-    
-    __tablename__ = 'groups'
+class Group(Base, TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin):
 
-    #Group data
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-    
-    # Status flags
-    is_active = Column(Boolean, default=True)
-    is_deleted = Column(Boolean, default=False)
-    
-    # Timestamps
-    created = Column(DateTime(timezone=True), server_default=func.now())
-    updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # Relationships
+    group_users: Mapped[List["UserGroup"]] = relationship(
+        back_populates="group",
+        foreign_keys="[UserGroup.group_id]",
+        lazy="selectin",
+    )
+    group_roles: Mapped[List["GroupRole"]] = relationship(
+        back_populates="group",
+        foreign_keys="[GroupRole.group_id]",
+        lazy="selectin",
+    )
 
-    #relationships
-    group_users = relationship("UserGroup", foreign_keys="[UserGroup.group_id]", back_populates="group")
-    group_roles = relationship("GroupRole", foreign_keys="[GroupRole.group_id]", back_populates="group")
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Group {self.name}>"

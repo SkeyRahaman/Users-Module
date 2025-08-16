@@ -1,35 +1,41 @@
-from sqlalchemy import (
-    Column, Integer, Boolean, DateTime, ForeignKey
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from . import Base
-
-class UserRole(Base):
-    __tablename__ = 'users_roles'
-
-    user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
-    role_id = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"), primary_key=True)
-
-    # Audit/Metadata columns
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"), nullable=True)
+from .mixins import AuditMixin, ValidityMixin
 
 
-    # Soft delete flag
-    is_deleted = Column(Boolean, default=False, nullable=False)
+class UserRole(Base, AuditMixin, ValidityMixin):
+    __tablename__ = "users_roles"
 
-    # Validity period for the association
-    valid_from = Column(DateTime(timezone=True), nullable=True)  
-    valid_until = Column(DateTime(timezone=True), nullable=True) 
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
 
     # Relationships
-    user = relationship("User", foreign_keys=[user_id], back_populates="user_roles", lazy="selectin")
-    role = relationship("Role", foreign_keys=[role_id], back_populates="role_users", lazy="selectin")
-    creator = relationship("User", foreign_keys=[created_by], lazy="joined")
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="user_roles",
+        foreign_keys=[user_id],
+        lazy="selectin",
+    )
+    role: Mapped["Role"] = relationship(
+        "Role",
+        back_populates="role_users",
+        foreign_keys=[role_id],
+        lazy="selectin",
+    )
 
-    def __repr__(self):
-        return (f"<UserRole user_id={self.user_id} "
-                f"role_id={self.role_id} created_by={self.created_at} "
-                f"is_deleted={self.is_deleted}>")
+    def __repr__(self) -> str:
+        return (
+            f"<UserRole user_id={self.user_id} "
+            f"role_id={self.role_id} created_at={self.created_at} "
+            f"is_deleted={self.is_deleted}>"
+        )
