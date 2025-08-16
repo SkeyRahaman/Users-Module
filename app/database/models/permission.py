@@ -1,30 +1,17 @@
-from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, Text
-)
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from typing import List
+from sqlalchemy.orm import Mapped, relationship
+
 from . import Base
+from .mixins import TimestampMixin, StatusMixin, NamedEntityMixin, TablenameMixin
 
-class Permission(Base):
-    
-    __tablename__ = 'permissions'
 
-    # Permission's data
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-    
-    # Status flags
-    is_active = Column(Boolean, default=True)
-    is_deleted = Column(Boolean, default=False)
-    
-    # Timestamps
-    created = Column(DateTime(timezone=True), server_default=func.now())
-    updated = Column(DateTime(timezone=True), server_default=func.now(),onupdate=func.now())
+class Permission(Base, TablenameMixin, TimestampMixin, StatusMixin, NamedEntityMixin):
 
-    #relationships
-    permission_roles = relationship("RolePermission", foreign_keys="[RolePermission.permission_id]", back_populates="permission")
+    permission_roles: Mapped[List["RolePermission"]] = relationship(
+        back_populates="permission",
+        foreign_keys="[RolePermission.permission_id]",
+        lazy="selectin",
+    )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Permission {self.name}>"
-    
