@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.user import UserCreate, UserUpdate
 from app.database.services.user_service import UserService
-from app.database.models import User, Group, Role
+from app.database.models import User, Group, Role, Permission
 
 
 @pytest.mark.asyncio
@@ -92,3 +92,28 @@ class TestUserService:
 
         assert isinstance(roles, list)
         assert any(r.id == role.id for r in roles)
+    async def test_get_all_permissions_for_user_no_roles(self, db_session: AsyncSession, test_user: User):
+        permissions = await UserService.get_all_permissions_for_user(db_session, test_user.id)
+        assert isinstance(permissions, list)
+        assert len(permissions) == 0
+
+    async def test_get_all_permissions_for_user_with_direct_roles(
+        self, db_session: AsyncSession, test_link_user_role_permission
+    ):
+        user, role, permission = test_link_user_role_permission
+        permissions = await UserService.get_all_permissions_for_user(db_session, user.id)
+        assert isinstance(permissions, list)
+        assert all(isinstance(p, Permission) for p in permissions)
+        assert permission.id in [p.id for p in permissions]
+
+    async def test_get_all_permissions_for_user_with_group_roles(self, db_session: AsyncSession, test_link_user_group_role_permission):
+        user, group, role, permission = test_link_user_group_role_permission
+        permissions = await UserService.get_all_permissions_for_user(db_session, user.id)
+        assert isinstance(permissions, list)
+        assert all(isinstance(p, Permission) for p in permissions)
+        assert len(permissions) > 0
+
+    async def test_get_all_permissions_for_user_with_duplicate_permissions(self, db_session: AsyncSession, test_user: User):
+        permissions = await UserService.get_all_permissions_for_user(db_session, test_user.id)
+        permission_ids = [p.id for p in permissions]
+        assert len(permission_ids) == len(set(permission_ids)), "Duplicate permissions found"
