@@ -2,7 +2,7 @@ from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.database.models import User,Role,Group, UserRole, UserGroup, GroupRole
+from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
 from app.auth.password_hash import PasswordHasher
 
@@ -184,3 +184,21 @@ class UserService:
         all_roles = {role.id: role for role in (direct_roles_result.scalars().all() + group_roles_result.scalars().all())}
 
         return list(all_roles.values())
+    
+    @staticmethod
+    async def get_all_permissions_for_user(db: AsyncSession, user_id: int) -> list[Permission]:
+        roles = await UserService.get_all_roles_for_user(db, user_id)
+        if not roles:
+            return []
+
+        role_ids = [role.id for role in roles]
+        result = await db.execute(
+            select(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .where(
+                RolePermission.role_id.in_(role_ids),
+                RolePermission.is_deleted == False,
+                Permission.is_deleted == False,
+            )
+        )
+        return list({permission.id: permission for permission in result.scalars().all()}.values())
