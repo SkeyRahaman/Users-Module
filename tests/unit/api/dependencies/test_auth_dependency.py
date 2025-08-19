@@ -1,9 +1,9 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from datetime import timedelta
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
-from app.api.dependencies.auth import create_access_token, get_current_user
+from app.api.dependencies.auth import create_access_token, get_current_user, require_permission
 from app.auth.jwt import JWTManager
 from app.database.services.user_service import UserService
 
@@ -70,3 +70,65 @@ class TestAuthDeps:
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user(token=token, db=MagicMock())
         assert exc_info.value.status_code == 401
+
+    async def test_permission_granted(self, monkeypatch, mock_db, mock_current_user):
+        """Should pass if required permission is present"""
+        # Patch UserService.get_all_permissions_for_user to return needed permission
+        monkeypatch.setattr(
+            "app.database.services.user_service.UserService.get_all_permissions_for_user",
+            AsyncMock(return_value=["sample:perm", "users:read"])
+        )
+
+        # Get the dependency function to test
+        dep = require_permission("users:read")
+
+        # The dependency returns a callable, call it with injected params
+        await dep(
+            db=mock_db,
+            current_user=mock_current_user
+        )  # No exception: passed
+
+    async def test_permission_missing(self, monkeypatch, mock_db, mock_current_user):
+        """Should raise HTTPException if permission is missing"""
+        monkeypatch.setattr(
+            "app.database.services.user_service.UserService.get_all_permissions_for_user",
+            AsyncMock(return_value=["other:perm"])
+        )
+        dep = require_permission("users:read")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await dep(
+                db=mock_db,
+                current_user=mock_current_user
+            )
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+        assert "Missing required permission" in exc_info.value.detail
+
+    async def test_permission_handles_empty_list(self, monkeypatch, mock_db, mock_current_user):
+        """Should raise if user has no permissions at all"""
+        monkeypatch.setattr(
+            "app.database.services.user_service.UserService.get_all_permissions_for_user",
+            AsyncMock(return_value=[])
+        )
+        dep = require_permission("users:read")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await dep(
+                db=mock_db,
+                current_user=mock_current_user
+            )
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_permission_handles_none(self, monkeypatch, mock_db, mock_current_user):
+        """Gracefully handle None returned as permissions (treated as missing)"""
+        monkeypatch.setattr(
+            "app.database.services.user_service.UserService.get_all_permissions_for_user",
+            AsyncMock(return_value=None)
+        )
+        dep = require_permission("users:read")
+        with pytest.raises(HTTPException) as exc_info:
+            await dep(
+                db=mock_db,
+                current_user=mock_current_user
+            )
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN

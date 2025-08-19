@@ -10,6 +10,7 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError, DecodeError
 from app.api.dependencies.database import get_db
 from app.config import Config
 from app.database.services.user_service import UserService
+from app.database.models.user import User
 from app.auth.jwt import JWTManager
 
 oauth2_scheme =  OAuth2PasswordBearer(tokenUrl = Config.URL_PREFIX+"auth/token")
@@ -48,3 +49,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
     return user
 
+def require_permission(required_scope: str):
+    async def dependency(
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+    ):
+        user_permissions = await UserService.get_all_permissions_for_user(db=db, user_id=current_user.id)
+        if not user_permissions or required_scope not in user_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing required permission: {required_scope}"
+            )
+    return dependency
