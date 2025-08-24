@@ -11,7 +11,7 @@ from app.config import Config as AppConfig
 # access to the values within the .ini file in use.
 config = context.config
 import os
-config.set_main_option("sqlalchemy.url", AppConfig.DATABASE_URL_ALEMBIC)
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{AppConfig.DEFAULT_DATABASE_NAME}"))
 
 
 # Interpret the config file for Python logging.
