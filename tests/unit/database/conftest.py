@@ -11,8 +11,8 @@ from app.database.models import (
     Base, User, Role, Permission, Group,
     UserRole, UserGroup, GroupRole, RolePermission
 )
+import os
 
-# ------------------ DB Session Fixture ------------------
 async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
 AsyncTestingSessionLocal = sessionmaker(
     bind=async_engine, class_=AsyncSession, expire_on_commit=False
@@ -21,13 +21,12 @@ AsyncTestingSessionLocal = sessionmaker(
 async def run_migrations_on_connection(async_engine: AsyncEngine, revision):
     async with async_engine.begin() as conn:
         alembic_cfg = AlembiConfig("alembic.ini")
-        alembic_cfg.set_main_option("sqlalchemy.url", Config.TEST_DATABASE_URL_ALEMBIC)
-        # Run Alembic migrations synchronously inside async context
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, lambda: command.upgrade(alembic_cfg, revision))
 
 @pytest_asyncio.fixture(scope="module")
 async def setup_database():
+    os.environ["DATABASE_URL_ALEMBIC"] = Config.TEST_DATABASE_URL_ALEMBIC
     await run_migrations_on_connection(async_engine, "head")
     yield
     async with async_engine.begin() as conn:

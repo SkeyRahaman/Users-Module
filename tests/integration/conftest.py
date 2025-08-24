@@ -16,6 +16,7 @@ from app.main import app
 from app.api.dependencies.database import get_db
 from app.config import Config
 
+# ------------------ DB Session Fixture ------------------
 async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
 AsyncTestingSessionLocal = sessionmaker(
     bind=async_engine, class_=AsyncSession, expire_on_commit=False
@@ -24,7 +25,6 @@ AsyncTestingSessionLocal = sessionmaker(
 async def run_migrations_on_connection(async_engine: AsyncEngine, revision):
     async with async_engine.begin() as conn:
         alembic_cfg = AlembiConfig("alembic.ini")
-        # Run Alembic migrations synchronously inside async context
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, lambda: command.upgrade(alembic_cfg, revision))
 
@@ -38,6 +38,11 @@ async def setup_database():
         await conn.run_sync(meta.reflect)
         await conn.run_sync(meta.drop_all)
     await async_engine.dispose()
+
+@pytest_asyncio.fixture
+async def db_session(setup_database):
+    async with AsyncTestingSessionLocal() as session:
+        yield session
 
 @pytest_asyncio.fixture
 async def db_session(setup_database):
