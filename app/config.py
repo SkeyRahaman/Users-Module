@@ -1,10 +1,11 @@
 import os
 
 class Config:
+    DEFAULT_DATABASE_NAME = "mydatabase.db"
     URL_PREFIX = os.getenv("URL_PREFIX","")
     VERSION = os.getenv("VERSION","V1")
-    DATABASE_URL = os.getenv("DATABASE_URL","sqlite+aiosqlite:///./mydatabase.db")
-    DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL","sqlite:///./mydatabase.db")
+    DATABASE_URL = os.getenv("DATABASE_URL",f"sqlite+aiosqlite:///./{DEFAULT_DATABASE_NAME}")
+    DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{DEFAULT_DATABASE_NAME}")
     ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",30)
     SECRET_KEY = os.getenv("SECRET_KEY","Some random secret key")
     TOKEN_ALGORITHM = os.getenv("TOKEN_ALGORITHM","HS256")
@@ -36,13 +37,12 @@ class Config:
     }
 
 
-
-    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL","sqlite+aiosqlite:///./test.db")
-
     DEFAULT_USER_ROLE_VALIDITY = 30
     DEFAULT_USER_GROUP_VALIDITY = 30
     DEFAULT_GROUP_ROLE_VALIDITY = 30
 
+    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL",f"sqlite+aiosqlite:///./TEST-{DEFAULT_DATABASE_NAME}")
+    TEST_DATABASE_URL_ALEMBIC = os.getenv("TEST_DATABASE_URL_ALEMBIC",f"sqlite:///./TEST-{DEFAULT_DATABASE_NAME}")
     TEST_USER = {
         "firstname": "test_firstname",
         "lastname": "test_lastname",
