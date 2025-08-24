@@ -1,6 +1,10 @@
 import pytest_asyncio
 import uuid
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
+from sqlalchemy import MetaData
+from alembic.config import Config as AlembiConfig
+from alembic import command
+import asyncio
 from sqlalchemy.orm import sessionmaker
 from app.config import Config
 from app.database.models import (
@@ -9,31 +13,33 @@ from app.database.models import (
 )
 
 # ------------------ DB Session Fixture ------------------
-engine = create_async_engine(
-    Config.TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in Config.TEST_DATABASE_URL else {},
-    future=True,
+async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
+AsyncTestingSessionLocal = sessionmaker(
+    bind=async_engine, class_=AsyncSession, expire_on_commit=False
 )
 
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False
-)
+async def run_migrations_on_connection(async_engine: AsyncEngine, revision):
+    async with async_engine.begin() as conn:
+        alembic_cfg = AlembiConfig("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", Config.TEST_DATABASE_URL_ALEMBIC)
+        # Run Alembic migrations synchronously inside async context
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, lambda: command.upgrade(alembic_cfg, revision))
+
+@pytest_asyncio.fixture(scope="module")
+async def setup_database():
+    await run_migrations_on_connection(async_engine, "head")
+    yield
+    async with async_engine.begin() as conn:
+        meta = MetaData()
+        await conn.run_sync(meta.reflect)
+        await conn.run_sync(meta.drop_all)
+    await async_engine.dispose()
 
 @pytest_asyncio.fixture
-async def db_session():
-    """Create all tables before tests and drop after tests."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    async with AsyncSessionLocal() as session:
+async def db_session(setup_database):
+    async with AsyncTestingSessionLocal() as session:
         yield session
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
 # ------------------ Base Entity Fixtures ------------------
 @pytest_asyncio.fixture

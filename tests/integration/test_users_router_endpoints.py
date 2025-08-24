@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from fastapi import status
 from httpx import AsyncClient
@@ -17,10 +18,10 @@ class TestUsersRouter:
         response = await client.post(
             url,
             json={
-                "firstname": Config.TEST_USER["firstname"],
-                "lastname": Config.TEST_USER["lastname"],
-                "username": Config.TEST_USER['username'],
-                "email": Config.TEST_USER['email'],
+                "firstname":"TestFirst_" + uuid.uuid4().hex[:6],
+                "lastname":"TestLast_" + uuid.uuid4().hex[:6],
+                "username":"user_" + uuid.uuid4().hex[:8],
+                "email":f"user_{uuid.uuid4().hex[:8]}@example.com",
                 "password": PasswordHasher.get_password_hash(Config.TEST_USER['password']),
             }
         )

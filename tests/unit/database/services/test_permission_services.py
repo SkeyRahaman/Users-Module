@@ -39,7 +39,7 @@ class TestPermissionService:
         assert await PermissionService.check_name_exists(db_session, "Nonexistent") is False
 
     async def test_get_all_permissions(self, db_session: AsyncSession, test_permission: Permission):
-        permissions = await PermissionService.get_all_permissions(db_session, skip=0, limit=10, sort_by="name", sort_order="asc")
+        permissions = await PermissionService.get_all_permissions(db_session, skip=0, limit=100, sort_by="name", sort_order="asc")
         assert isinstance(permissions, list)
         assert any(p.id == test_permission.id for p in permissions)
 
