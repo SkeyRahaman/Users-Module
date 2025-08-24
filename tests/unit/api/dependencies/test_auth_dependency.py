@@ -80,7 +80,7 @@ class TestAuthDeps:
         )
 
         # Get the dependency function to test
-        dep = require_permission("users:read")
+        dep = require_permission("users:read").dependency
 
         # The dependency returns a callable, call it with injected params
         await dep(
@@ -94,7 +94,7 @@ class TestAuthDeps:
             "app.database.services.user_service.UserService.get_all_permissions_for_user",
             AsyncMock(return_value=["other:perm"])
         )
-        dep = require_permission("users:read")
+        dep = require_permission("users:read").dependency
 
         with pytest.raises(HTTPException) as exc_info:
             await dep(
@@ -110,7 +110,7 @@ class TestAuthDeps:
             "app.database.services.user_service.UserService.get_all_permissions_for_user",
             AsyncMock(return_value=[])
         )
-        dep = require_permission("users:read")
+        dep = require_permission("users:read").dependency
 
         with pytest.raises(HTTPException) as exc_info:
             await dep(
@@ -125,7 +125,7 @@ class TestAuthDeps:
             "app.database.services.user_service.UserService.get_all_permissions_for_user",
             AsyncMock(return_value=None)
         )
-        dep = require_permission("users:read")
+        dep = require_permission("users:read").dependency
         with pytest.raises(HTTPException) as exc_info:
             await dep(
                 db=mock_db,
