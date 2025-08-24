@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optional, Annotated
+from sqlalchemy import select, func, or_, desc, asc
+from sqlalchemy.orm import joinedload
 
 from app.api.dependencies.database import get_db
-from app.schemas.user import UserCreate, UserUpdate, UserOut
+from app.schemas.user import UserCreate, UserUpdate, UserOut, UsersResponse
 from app.database.services.user_service import UserService
-from app.api.dependencies.auth import get_current_user
-from app.database.models import User
+from app.database.models import User, Role, Group
+from app.api.dependencies.auth import get_current_user, require_permission
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -42,6 +45,39 @@ async def delete_me(
 ):
     await UserService.delete_user(db, current_user.id)
     return {"Message": "User Deleted."}
+    
+@router.get("/get_all_users", response_model=UsersResponse, dependencies=[require_permission("search_user")])
+async def get_all_users1(
+    page: Annotated[int, Query(ge=1)] = 1,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    sort: Annotated[Optional[str], Query()] = "created",
+    order: Annotated[Optional[str], Query()] = "desc",
+    status: Optional[bool] = Query(True, description="Filter by user status"),
+    role: Optional[str] = Query(None, description="Filter by user role"),
+    group: Optional[str] = Query(None, description="Filter by user group"),
+    search: Optional[str] = Query(None, description="Search term on username or email"),
+    session: AsyncSession = Depends(get_db)      # DB session
+):
+    total, users = await UserService.get_all_users(
+        db=session,
+        page=page,
+        limit=limit,
+        sort_by=sort,
+        sort_order=order,
+        status=status,
+        role=role,
+        group=group,
+        search=search
+    )
+    # Convert ORM objects to Pydantic schemas
+    users_data = [UserOut.model_validate(u) for u in users]
+    # Assemble full paginated response
+    return UsersResponse(
+        page=page,
+        limit=limit,
+        total=total,
+        users=users_data
+    )
 
 # 🔸 GET /users/{id} - Admin only access to fetch any user (async)
 @router.get("/{id}", response_model=UserOut, name="get_by_id")

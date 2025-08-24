@@ -1,6 +1,7 @@
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
@@ -91,29 +92,83 @@ class UserService:
     @staticmethod
     async def get_all_users(
         db: AsyncSession,
-        skip: int = 0,
-        limit: int = 10,
+        page: int = 1,
+        limit: int = 50,
         sort_by: str = "created",
-        sort_order: str = "desc"
-    ) -> list[User]:
-        if not hasattr(User, sort_by):
-            return []
+        sort_order: str = "desc",
+        status: bool = True,
+        role: str | None = None,
+        group: str | None = None,
+        search: str | None = None,
+    ) -> tuple[int, list[User]]:
+        print("here--1")
+        allowed_sort_fields = {"id", "username", "email", "status", "created"}
+        if sort_by not in allowed_sort_fields:
+            sort_by = "created"
 
-        order_by_clause = (
-            desc(getattr(User, sort_by))
-            if sort_order == "desc"
-            else asc(getattr(User, sort_by))
-        )
+        order_expr = desc(getattr(User, sort_by)) if sort_order.lower() == "desc" else asc(getattr(User, sort_by))
 
-        result = await db.execute(
+        query = (
             select(User)
+            .options(
+                selectinload(User.user_roles).selectinload(UserRole.role),
+                selectinload(User.user_groups).selectinload(UserGroup.group)
+            )
             .where(User.is_deleted == False)
-            .order_by(order_by_clause)
-            .offset(skip)
-            .limit(limit)
         )
-        return result.scalars().all()
 
+        filters = []
+
+        # Filter by active status (assuming status is "active" or "inactive", map accordingly)
+        if status:
+            filters.append(User.is_active == True)
+        else:
+            filters.append(User.is_active == False)
+
+        # Filter by Role name:
+        if role:
+            query = query.join(User.user_roles).join(UserRole.role)
+            filters.append(func.lower(Role.name) == role.lower())
+
+        # Filter by Group name:
+        if group:
+            query = query.join(User.user_groups).join(UserGroup.group)
+            filters.append(func.lower(Group.name) == group.lower())
+
+        # Search by username or email (case insensitive partial match)
+        if search:
+            search_pattern = f"%{search.lower()}%"
+            filters.append(
+                or_(
+                    func.lower(User.username).like(search_pattern),
+                    func.lower(User.email).like(search_pattern),
+                )
+            )
+
+        if filters:
+            query = query.where(*filters)
+
+        # Count total with same filters
+        count_query = select(func.count()).select_from(User).where(User.is_deleted == False)
+        if filters:
+            if role:
+                count_query = count_query.join(User.user_roles).join(UserRole.role)
+            if group:
+                count_query = count_query.join(User.user_groups).join(UserGroup.group)
+            count_query = count_query.where(*filters)
+
+        total_result = await db.execute(count_query)
+        total = total_result.scalar_one()
+
+        # Pagination:
+        offset = (page - 1) * limit
+        query = query.order_by(order_expr).offset(offset).limit(limit)
+
+        result = await db.execute(query)
+        users = result.scalars().unique().all()
+
+        return total, users
+    
     @staticmethod
     async def check_username_exists(db: AsyncSession, username: str) -> bool:
         result = await db.execute(

@@ -173,6 +173,8 @@ def upgrade() -> None:
             {"id": 32, "name": "assign_user_to_group", "description": "Permission to add user to group", "is_active": True, "is_deleted": False},
             {"id": 33, "name": "remove_user_from_group", "description": "Permission to remove user from group", "is_active": True, "is_deleted": False},
             {"id": 34, "name": "view_audit_logs", "description": "Permission to view audit and logs", "is_active": True, "is_deleted": False},
+            {"id": 35, "name": "search_user", "description": "Permission to serarch user in db", "is_active": True, "is_deleted": False},
+            
         ],
     )
 
@@ -223,7 +225,7 @@ def upgrade() -> None:
     )
 
     # 6. Associations: roles_permissions — Admin gets all, Manager and User get selective (simplified example)
-    admin_permissions = list(range(1, 35))  # all permission IDs 1 to 34
+    admin_permissions = list(range(1, 36))  # all permission IDs 1 to 34
     # Manager gets subset (example: IDs 2, 3, 11, 15, etc.)
     manager_permissions = [2,3,11,15,16,18,22,33]
     # User gets minimal permissions (example IDs 2,3)

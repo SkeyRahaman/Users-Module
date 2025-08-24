@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.user import UserCreate, UserUpdate
 from app.database.services.user_service import UserService
@@ -58,10 +59,49 @@ class TestUserService:
         assert await UserService.check_email_exists(db_session, test_user.email) is True
         assert await UserService.check_email_exists(db_session, "fake@email.com") is False
 
-    async def test_get_all_users(self, db_session: AsyncSession, test_user: User):
-        users = await UserService.get_all_users(db_session, skip=0, limit=10, sort_by="username", sort_order="asc")
+    async def test_get_all_users_basic(self, db_session: AsyncSession, test_user: User):
+        total, users = await UserService.get_all_users(db_session)
         assert isinstance(users, list)
+        assert isinstance(total, int)
+        assert total >= 1
         assert any(u.id == test_user.id for u in users)
+
+    async def test_get_all_users_sorting(self, db_session: AsyncSession, test_user: User):
+        user2 = User(
+            firstname="TestFirst_" + uuid.uuid4().hex[:6],
+            lastname="TestLast_" + uuid.uuid4().hex[:6],
+            username="user_" + uuid.uuid4().hex[:8],
+            email=f"user_{uuid.uuid4().hex[:8]}@example.com",
+            password="hashedpassword"
+        )
+        db_session.add(user2)
+        await db_session.commit()
+        await db_session.refresh(user2)
+        total_asc, users_asc = await UserService.get_all_users(db_session, page=1, limit=5, sort_by="email", sort_order="asc")
+        total_desc, users_desc = await UserService.get_all_users(db_session, page=1, limit=5, sort_by="email", sort_order="desc")
+        assert users_asc != users_desc  # Results should be different order
+        emails_asc = [u.email for u in users_asc]
+        assert emails_asc == sorted(emails_asc)
+
+    async def test_get_all_users_filter_status(self, db_session: AsyncSession, test_user: User):
+        status = test_user.is_active
+        total, users = await UserService.get_all_users(db_session, status=status)
+        assert all(u.is_active == status for u in users)
+
+    async def test_get_all_users_filter_role(self, db_session: AsyncSession, test_link_user_role):
+        test_user, test_role = test_link_user_role
+        total, users = await UserService.get_all_users(db_session, role=test_role.name)
+        assert all(any(r.role.name == test_role.name for r in u.user_roles) for u in users)
+
+    async def test_get_all_users_filter_group(self, db_session: AsyncSession, test_link_user_group):
+        test_user, test_group = test_link_user_group
+        total, users = await UserService.get_all_users(db_session, group=test_group.name)
+        assert all(any(g.group.name == test_group.name for g in u.user_groups) for u in users)
+
+    async def test_get_all_users_search(self, db_session: AsyncSession, test_user: User):
+        search_term = test_user.username[:3]  # Partial username
+        total, users = await UserService.get_all_users(db_session, search=search_term)
+        assert any(search_term.lower() in u.username.lower() or search_term.lower() in u.email.lower() for u in users)
 
     async def test_delete_user(self, db_session: AsyncSession, test_user: User):
         result = await UserService.delete_user(db_session, test_user.id)
@@ -69,8 +109,6 @@ class TestUserService:
 
         deleted_user = await UserService.get_user_by_id(db_session, test_user.id)
         assert deleted_user is None
-
-    # ---- New Role/Group Function Tests ----
 
     async def test_get_all_groups_for_user(self, db_session: AsyncSession, test_link_user_group):
         user, group = test_link_user_group

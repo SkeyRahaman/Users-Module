@@ -85,12 +85,16 @@ async def test_group(db_session: AsyncSession):
 async def test_link_user_role(db_session: AsyncSession, test_user, test_role):
     db_session.add(UserRole(user_id=test_user.id, role_id=test_role.id))
     await db_session.commit()
+    await db_session.refresh(test_user)
+    await db_session.refresh(test_role)
     return test_user, test_role
 
 @pytest_asyncio.fixture
 async def test_link_user_group(db_session: AsyncSession, test_user, test_group):
     db_session.add(UserGroup(user_id=test_user.id, group_id=test_group.id))
     await db_session.commit()
+    await db_session.refresh(test_user)
+    await db_session.refresh(test_group)
     return test_user, test_group
 
 @pytest_asyncio.fixture
