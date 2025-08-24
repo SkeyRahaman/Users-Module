@@ -48,3 +48,9 @@ class UserOut(UserBase):
 class UserDetail(UserOut):
     roles: List[str] = []
     groups: List[str] = []
+
+class UsersResponse(BaseModel):
+    page: int
+    limit: int
+    total: int
+    users: List[UserOut]
