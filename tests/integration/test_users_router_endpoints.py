@@ -94,37 +94,50 @@ class TestUsersRouter:
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_get_all_users(
-        self,
-        client: AsyncClient,
-        test_user: User,
-        token: str
+    async def test_get_all_users(self, client: AsyncClient, admin_token: str, test_user: User
     ):
-        url = app.url_path_for("get_all_users1")  # Name of your endpoint function
-
-        # You can pass query params like page, limit, sort, order, etc. (adjust as needed)
+        url = app.url_path_for("get_all_users")
         params = {
             "page": 1,
             "limit": 10,
             "sort": "created",
             "order": "desc",
             "status": True,
-            # Optionally add role, group, search for more detailed tests
         }
-
-        headers = {"Authorization": f"Bearer {token}"}
-
+        headers = {"Authorization": f"Bearer {admin_token}"}
         response = await client.get(url, headers=headers, params=params)
-
-        assert response.status_code == status.HTTP_200_OK
-
         data = response.json()
-
-        # Basic checks on the returned JSON structure
+        assert response.status_code == status.HTTP_200_OK
         assert "page" in data and data["page"] == 1
         assert "limit" in data and data["limit"] == 10
         assert "total" in data and isinstance(data["total"], int)
         assert "users" in data and isinstance(data["users"], list)
-
-        # Verify that the test user is included in the response users (by username or id)
         assert any(user["id"] == test_user.id or user["username"] == test_user.username for user in data["users"])
+
+    async def test_get_all_users_no_auth(self, client):
+        url = app.url_path_for("get_all_users")
+        response = await client.get(url, params={"page": 1, "limit": 10})
+        assert response.status_code in (401, 403)
+
+    async def test_get_all_users_invalid_token(self, client):
+        url = app.url_path_for("get_all_users")
+        response = await client.get(url, headers={"Authorization": "Bearer invalidtoken"})
+        assert response.status_code == 401
+
+    async def test_get_all_users_invalid_page_limit(self, client, admin_token):
+        url = app.url_path_for("get_all_users")
+        params = {"page": "abc", "limit": -1}
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"}, params=params)
+        assert response.status_code in (400, 422)
+
+    async def test_get_all_users_permission_denied(self, client, token):
+        url = app.url_path_for("get_all_users")
+        response = await client.get(url, headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 403
+
+    async def test_get_all_users_empty_result(self, client, admin_token: str):
+        url = app.url_path_for("get_all_users")
+        params = {"search": "nonexistentusername"}
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"}, params=params)
+        assert response.status_code == 200
+        assert response.json()["users"] == []

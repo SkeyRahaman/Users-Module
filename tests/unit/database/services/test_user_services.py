@@ -141,15 +141,13 @@ class TestUserService:
         user, role, permission = test_link_user_role_permission
         permissions = await UserService.get_all_permissions_for_user(db_session, user.id)
         assert isinstance(permissions, list)
-        assert all(isinstance(p, Permission) for p in permissions)
-        assert permission.id in [p.id for p in permissions]
+        assert permission.name in permissions
 
     async def test_get_all_permissions_for_user_with_group_roles(self, db_session: AsyncSession, test_link_user_group_role_permission):
         user, group, role, permission = test_link_user_group_role_permission
         permissions = await UserService.get_all_permissions_for_user(db_session, user.id)
         assert isinstance(permissions, list)
-        assert all(isinstance(p, Permission) for p in permissions)
-        assert len(permissions) > 0
+        assert permission.name in permissions
 
     async def test_get_all_permissions_for_user_with_duplicate_permissions(self, db_session: AsyncSession, test_user: User):
         permissions = await UserService.get_all_permissions_for_user(db_session, test_user.id)

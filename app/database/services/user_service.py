@@ -101,7 +101,6 @@ class UserService:
         group: str | None = None,
         search: str | None = None,
     ) -> tuple[int, list[User]]:
-        print("here--1")
         allowed_sort_fields = {"id", "username", "email", "status", "created"}
         if sort_by not in allowed_sort_fields:
             sort_by = "created"
@@ -256,4 +255,4 @@ class UserService:
                 Permission.is_deleted == False,
             )
         )
-        return list({permission.id: permission for permission in result.scalars().all()}.values())
+        return list({permission.id: permission.name for permission in result.scalars().all()}.values())

@@ -1,6 +1,6 @@
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy import MetaData
@@ -44,10 +44,6 @@ async def db_session(setup_database):
     async with AsyncTestingSessionLocal() as session:
         yield session
 
-@pytest_asyncio.fixture
-async def db_session(setup_database):
-    async with AsyncTestingSessionLocal() as session:
-        yield session
 
 @pytest_asyncio.fixture
 async def override_get_db(db_session):
@@ -118,3 +114,17 @@ async def test_permission(db_session: AsyncSession):
     yield permission
     await db_session.delete(permission)
     await db_session.commit()
+
+@pytest_asyncio.fixture
+async def admin_user(db_session: AsyncSession):
+    user = await db_session.execute(
+        select(User).where(User.username == Config.ADMIN_USER['username'])
+    )
+    admin_user = user.scalars().first()
+    if admin_user is None:
+        raise RuntimeError("No admin user found in the database for tests")
+    yield admin_user
+
+@pytest_asyncio.fixture
+async def admin_token():
+    return JWTManager.encode(data={"sub": Config.ADMIN_USER['username']})

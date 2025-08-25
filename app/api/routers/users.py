@@ -47,7 +47,7 @@ async def delete_me(
     return {"Message": "User Deleted."}
     
 @router.get("/get_all_users", response_model=UsersResponse, dependencies=[require_permission("search_user")])
-async def get_all_users1(
+async def get_all_users(
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     sort: Annotated[Optional[str], Query()] = "created",
