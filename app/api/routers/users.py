@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import datetime,timezone
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Annotated
 from sqlalchemy import select, func, or_, desc, asc
@@ -80,7 +81,7 @@ async def get_all_users(
     )
 
 # 🔸 GET /users/{id} - Admin only access to fetch any user (async)
-@router.get("/{id}", response_model=UserOut, name="get_by_id")
+@router.get("/{id}", response_model=UserOut, name="get_by_id", dependencies=[require_permission("search_user")])
 async def get_user_by_id(
     id: int,
     db: AsyncSession = Depends(get_db),
@@ -94,3 +95,32 @@ async def get_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="User not found.",
         )
+        
+@router.post("/{user_id}/activate", status_code=status.HTTP_200_OK, dependencies=[require_permission("activate_user")])
+async def activate_user(
+    user_id: int = Path(..., title="User ID to activate"),
+    db: AsyncSession = Depends(get_db),
+):
+    success = await UserService.activate_user(db, user_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Activation failed. User may already be active or not exist.",
+        )
+    updated_at = datetime.now(tz=timezone.utc).isoformat()
+    return {"status": "active", "updated_at": updated_at}
+
+@router.post("/{user_id}/deactivate", status_code=status.HTTP_200_OK, dependencies=[require_permission("deactivate_user")])
+async def deactivate_user(
+    user_id: int = Path(..., title="User ID to deactivate"),
+    reason: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    success = await UserService.deactivate_user(db, user_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Deactivation failed. User may already be inactive or not exist.",
+        )
+    updated_at = datetime.now(tz=timezone.utc).isoformat()
+    return {"status": "inactive", "updated_at": updated_at}

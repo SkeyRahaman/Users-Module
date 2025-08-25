@@ -1,6 +1,8 @@
+from unittest.mock import AsyncMock, MagicMock
 import pytest
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.schemas.user import UserCreate, UserUpdate
 from app.database.services.user_service import UserService
 from app.database.models import User, Group, Role, Permission
@@ -153,3 +155,72 @@ class TestUserService:
         permissions = await UserService.get_all_permissions_for_user(db_session, test_user.id)
         permission_ids = [p.id for p in permissions]
         assert len(permission_ids) == len(set(permission_ids)), "Duplicate permissions found"
+
+    async def test_activate_user_success(self, db_session: AsyncSession, test_user: User):
+        test_user.is_active = False
+        db_session.add(test_user)
+        await db_session.commit()
+        await db_session.refresh(test_user)
+
+        result = await UserService.activate_user(db_session, test_user.id)
+        assert result is True
+        await db_session.refresh(test_user)
+        assert test_user.is_active is True
+
+    async def test_activate_user_already_active(self, db_session: AsyncSession, test_user: User):
+        result = await UserService.activate_user(db_session, test_user.id)
+        assert result is False
+
+    async def test_activate_user_not_found(self, db_session: AsyncSession):
+        result = await UserService.activate_user(db_session, 999)
+        assert result is False
+
+    async def test_activate_user_commit_error(self, db_session: AsyncSession):
+        user = User(id=1, is_active=False, is_deleted=False)
+        # Mock result from db.execute()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        db_session.execute = AsyncMock(return_value=mock_result)
+        db_session.commit = AsyncMock(side_effect=IntegrityError('msg', 'params', 'orig'))
+        db_session.rollback = AsyncMock()
+
+        result = await UserService.activate_user(db_session, user.id)
+        assert result is False
+        db_session.rollback.assert_awaited_once()
+        
+    async def test_deactivate_user_success(self, db_session: AsyncSession, test_user: User):
+        test_user.is_active = True
+        db_session.add(test_user)
+        await db_session.commit()
+        await db_session.refresh(test_user)
+
+        result = await UserService.deactivate_user(db_session, test_user.id)
+        assert result is True
+        await db_session.refresh(test_user)
+        assert test_user.is_active is False
+
+    async def test_deactivate_user_already_inactive(self, db_session: AsyncSession, test_user: User):
+        test_user.is_active = False
+        db_session.add(test_user)
+        await db_session.commit()
+        await db_session.refresh(test_user)
+
+        result = await UserService.deactivate_user(db_session, test_user.id)
+        assert result is False
+
+    async def test_deactivate_user_not_found(self, db_session: AsyncSession):
+        result = await UserService.deactivate_user(db_session, 999)
+        assert result is False
+
+    async def test_deactivate_user_commit_error(self, db_session: AsyncSession):
+        user = User(id=1, is_active=True, is_deleted=False)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        db_session.execute = AsyncMock(return_value=mock_result)
+        db_session.commit = AsyncMock(side_effect=SQLAlchemyError())
+        db_session.rollback = AsyncMock()
+
+        result = await UserService.deactivate_user(db_session, user.id)
+        assert result is False
+        db_session.rollback.assert_awaited_once()
+       

@@ -141,3 +141,58 @@ class TestUserRouter:
         assert len(response.users) == 1
         assert isinstance(response.users[0], UserOut)
         assert response.users[0].username == dummy_user.username
+
+    async def test_activate_user_success(self, mock_db):
+        user_id = 123
+        with patch.object(
+            UserService,
+            "activate_user",
+            new_callable=AsyncMock,
+            return_value=True
+        ):
+            response = await users_router.activate_user(user_id, mock_db)
+            assert response["status"] == "active"
+            assert "updated_at" in response
+
+
+    async def test_activate_user_failure_raises(self, mock_db):
+        user_id = 123
+        with patch.object(
+            UserService,
+            "activate_user",
+            new_callable=AsyncMock,
+            return_value=False
+        ), pytest.raises(HTTPException) as exc_info:
+            await users_router.activate_user(user_id, mock_db)
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Activation failed" in exc_info.value.detail
+
+
+    async def test_deactivate_user_success(self, mock_db):
+        user_id = 123
+        reason = "No longer active"
+        with patch.object(
+            UserService,
+            "deactivate_user",
+            new_callable=AsyncMock,
+            return_value=True
+        ):
+            response = await users_router.deactivate_user(user_id, reason, mock_db)
+            assert response["status"] == "inactive"
+            assert "updated_at" in response
+
+
+    async def test_deactivate_user_failure_raises(self, mock_db):
+        user_id = 123
+        reason = None
+        with patch.object(
+            UserService,
+            "deactivate_user",
+            new_callable=AsyncMock,
+            return_value=False
+        ), pytest.raises(HTTPException) as exc_info:
+            await users_router.deactivate_user(user_id, reason, mock_db)
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Deactivation failed" in exc_info.value.detail

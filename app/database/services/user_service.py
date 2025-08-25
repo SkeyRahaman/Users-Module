@@ -1,6 +1,6 @@
 from sqlalchemy import asc, desc, select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
 from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
@@ -104,9 +104,7 @@ class UserService:
         allowed_sort_fields = {"id", "username", "email", "status", "created"}
         if sort_by not in allowed_sort_fields:
             sort_by = "created"
-
         order_expr = desc(getattr(User, sort_by)) if sort_order.lower() == "desc" else asc(getattr(User, sort_by))
-
         query = (
             select(User)
             .options(
@@ -115,25 +113,20 @@ class UserService:
             )
             .where(User.is_deleted == False)
         )
-
         filters = []
-
         # Filter by active status (assuming status is "active" or "inactive", map accordingly)
         if status:
             filters.append(User.is_active == True)
         else:
             filters.append(User.is_active == False)
-
         # Filter by Role name:
         if role:
             query = query.join(User.user_roles).join(UserRole.role)
             filters.append(func.lower(Role.name) == role.lower())
-
         # Filter by Group name:
         if group:
             query = query.join(User.user_groups).join(UserGroup.group)
             filters.append(func.lower(Group.name) == group.lower())
-
         # Search by username or email (case insensitive partial match)
         if search:
             search_pattern = f"%{search.lower()}%"
@@ -143,10 +136,8 @@ class UserService:
                     func.lower(User.email).like(search_pattern),
                 )
             )
-
         if filters:
             query = query.where(*filters)
-
         # Count total with same filters
         count_query = select(func.count()).select_from(User).where(User.is_deleted == False)
         if filters:
@@ -155,17 +146,13 @@ class UserService:
             if group:
                 count_query = count_query.join(User.user_groups).join(UserGroup.group)
             count_query = count_query.where(*filters)
-
         total_result = await db.execute(count_query)
         total = total_result.scalar_one()
-
         # Pagination:
         offset = (page - 1) * limit
         query = query.order_by(order_expr).offset(offset).limit(limit)
-
         result = await db.execute(query)
         users = result.scalars().unique().all()
-
         return total, users
     
     @staticmethod
@@ -216,7 +203,6 @@ class UserService:
                 Role.is_deleted == False
             )
         )
-
         # Roles via groups
         group_roles_query = (
             select(Role)
@@ -229,22 +215,21 @@ class UserService:
                 Role.is_deleted == False
             )
         )
-
         # Execute queries
         direct_roles_result = await db.execute(direct_roles_query)
         group_roles_result = await db.execute(group_roles_query)
-
         # Combine and ensure unique Role IDs
         all_roles = {role.id: role for role in (direct_roles_result.scalars().all() + group_roles_result.scalars().all())}
-
         return list(all_roles.values())
     
     @staticmethod
     async def get_all_permissions_for_user(db: AsyncSession, user_id: int) -> list[Permission]:
+        """
+        Returns all unique permissions for the user based on their roles.
+        """
         roles = await UserService.get_all_roles_for_user(db, user_id)
         if not roles:
             return []
-
         role_ids = [role.id for role in roles]
         result = await db.execute(
             select(Permission)
@@ -256,3 +241,51 @@ class UserService:
             )
         )
         return list({permission.id: permission.name for permission in result.scalars().all()}.values())
+        
+    @staticmethod
+    async def activate_user(db: AsyncSession, user_id: int) -> bool:
+        """
+        Activates a user by setting is_active to True.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user or user.is_active:
+            return False
+        user.is_active = True
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+        except SQLAlchemyError:
+            await db.rollback()
+            return False
+
+    @staticmethod
+    async def deactivate_user(db: AsyncSession, user_id: int) -> bool:
+        """
+        Deactivates a user by setting is_active to False.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user or not user.is_active:
+            return False
+        user.is_active = False
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+        except SQLAlchemyError:
+            await db.rollback()
+            return False
