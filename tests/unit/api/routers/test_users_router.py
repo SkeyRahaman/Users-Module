@@ -8,7 +8,6 @@ from app.api.routers import users as users_router
 from app.schemas.user import UserCreate, UserOut, UserUpdate, UsersResponse
 from app.database.services.user_service import UserService
 
-
 @pytest.mark.asyncio
 class TestUserRouter:
     # 🔸 POST /users/
@@ -93,11 +92,8 @@ class TestUserRouter:
 
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_get_all_users1(self, mocker):
-        # Mock AsyncSession dependency
+    async def test_get_all_users(self, mocker):
         mock_session = AsyncMock(spec=AsyncSession)
-
-        # Create dummy user(s) - can be SQLAlchemy models or simple mocks
         dummy_user = User(
             id=1,
             firstname="John",
@@ -114,13 +110,8 @@ class TestUserRouter:
             created="2025-08-21 15:24:55",
             updated="2025-08-21 15:24:55"
         )
-
-        # Mock UserService.get_all_users to return total and list of dummy users
-        mock_service = mocker.patch("app.database.services.user_service.UserService.get_all_users",
-                                return_value=(1, [dummy_user]))
-
-        # Call the endpoint function directly with parameters and mocked session
-        response = await users_router.get_all_users1(
+        mock_service = mocker.patch("app.database.services.user_service.UserService.get_all_users", return_value=(1, [dummy_user]))
+        response = await users_router.get_all_users(
             page=1,
             limit=50,
             sort="created",
@@ -131,8 +122,6 @@ class TestUserRouter:
             search=None,
             session=mock_session
         )
-
-        # Check that user service was called with correct arguments
         mock_service.assert_called_once_with(
             db=mock_session,
             page=1,
@@ -144,8 +133,6 @@ class TestUserRouter:
             group=None,
             search=None
         )
-
-        # Check response type and content
         assert isinstance(response, UsersResponse)
         assert response.page == 1
         assert response.limit == 50
