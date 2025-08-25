@@ -41,7 +41,7 @@ async def db_session(setup_database):
         yield session
 
 # ------------------ Base Entity Fixtures ------------------
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession):
     user = User(
         firstname="TestFirst_" + uuid.uuid4().hex[:6],
