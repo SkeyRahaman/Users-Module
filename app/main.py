@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from app.config import Config
 from app.api.routers import users, auth, permissions, groups, roles, health
+from app.middlewares.logger_middlewares import LogCorrelationIdMiddleware
 
 app = FastAPI(
     title="Users Module",
     description="Endpoints related to users authentications and authorizations.",
     version=Config.VERSION
 )
+app.add_middleware(LogCorrelationIdMiddleware)
 
 app.include_router(health.router)
 app.include_router(users.router)

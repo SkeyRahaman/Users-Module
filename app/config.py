@@ -10,6 +10,13 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY","Some random secret key")
     TOKEN_ALGORITHM = os.getenv("TOKEN_ALGORITHM","HS256")
 
+    # Logging Configuration
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    LOG_FILENAME = os.getenv("LOG_FILENAME", "app.log")
+    LOG_FOLDERNAME = os.getenv("LOG_FOLDERNAME", "logs")
+    LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", 5_000_000))
+    LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", 1))
+
     # Add Admin user default info
     ADMIN_USER = {
         "firstname": os.getenv("ADMIN_FIRSTNAME", "Admin"),
