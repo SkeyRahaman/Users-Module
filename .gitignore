@@ -68,3 +68,8 @@ local_settings.py
 *.egg-info/
 dist/
 build/
+
+#ignore log files
+*.log
+logs/
+logs-test/
