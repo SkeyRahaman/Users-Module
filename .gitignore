@@ -72,4 +72,4 @@ build/
 #ignore log files
 *.log
 logs/
-logs-test/
+logs-TEST/
