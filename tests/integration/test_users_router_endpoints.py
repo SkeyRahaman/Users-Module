@@ -3,6 +3,7 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+from unittest.mock import patch, AsyncMock
 
 from app.main import app
 from app.database.models import User
@@ -193,3 +194,39 @@ class TestUsersRouter:
         response = await client.post(url, headers=headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    async def test_get_user_activity_logs_success(self, client: AsyncClient, test_user: User, admin_token: str):
+        user_id = test_user.id
+        mocked_logs = [{"action": "login", "timestamp": "2025-08-27T22:00:00Z"}]
+        mocked_total = 1
+
+        with patch(
+            "app.database.services.user_service.UserService.get_users_activity_logs",
+            new_callable=AsyncMock,
+            return_value=(mocked_logs, mocked_total)
+        ):
+            url = app.url_path_for("get_user_activity_logs", user_id=user_id)
+            response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json() == {
+                "user_id": user_id,
+                "total": mocked_total,
+                "limit": 50,
+                "offset": 0,
+                "activities": mocked_logs,
+            }
+
+    @pytest.mark.asyncio
+    async def test_get_user_activity_logs_not_found(self, client: AsyncClient, test_user: User, admin_token: str):
+        user_id = test_user.id
+
+        with patch(
+            "app.database.services.user_service.UserService.get_users_activity_logs",
+            new_callable=AsyncMock,
+            return_value=(None, 0)
+        ):
+            url = app.url_path_for("get_user_activity_logs", user_id=user_id)
+            response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+
+            assert response.status_code == status.HTTP_404_NOT_FOUND
+            assert response.json() == {"detail": "User not found or no activity logs available."}

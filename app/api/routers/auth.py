@@ -7,6 +7,7 @@ from app.api.dependencies.database import get_db
 from app.database.services.user_service import UserService
 from app.auth.password_hash import PasswordHasher
 from app.api.dependencies.auth import create_access_token
+from app.utils.logger import log
 
 router = APIRouter(
     prefix="/auth",
@@ -39,6 +40,7 @@ async def get_token(
         )
     # Usually create_access_token is synchronous, if not change as needed
     access_token = create_access_token(data={"sub": user.username})
+    log.info("Token generated", user_id=user.id, username=user.username)
     return {
         "access_token": access_token,
         "token_type": "bearer",
