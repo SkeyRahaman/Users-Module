@@ -12,6 +12,7 @@ class TestAuthRouter:
     def test_user(self):
         class User:
             def __init__(self):
+                self.id = 1
                 self.username = "testuser"
                 self.password = PasswordHasher.get_password_hash("secret")
                 self.is_deleted = False

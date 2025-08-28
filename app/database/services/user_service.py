@@ -1,11 +1,16 @@
+from typing import Optional
 from sqlalchemy import asc, desc, select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import selectinload
+import json
+import os
+from datetime import datetime
 
 from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
 from app.auth.password_hash import PasswordHasher
+from app.config import Config
 
 class UserService:
 
@@ -289,3 +294,51 @@ class UserService:
         except SQLAlchemyError:
             await db.rollback()
             return False
+
+    @staticmethod
+    async def get_users_activity_logs(
+        db: AsyncSession, user_id: int, limit: int = 50, offset: int = 0
+    ) -> list[list[dict],int] | None:
+        """
+        Fetches activity logs for a user.
+        This is a placeholder implementation. Will replace later with actual log fetching logic.
+        """
+        # Placeholder: In a real implementation, fetch logs from a logging table or service.
+        # Here we return a dummy log entry for demonstration.
+        # The current one fetches the logfiles and in log files each line is a json so get the objects and
+        # cheeck if user_id is present in that json object. then checks if the user_id matches if so return
+        # json objects in a list.
+        logs: list[dict] = []
+
+        # Iterate over all files in the log folder
+        for filename in os.listdir(Config.LOG_FOLDERNAME):
+            file_path = os.path.join(Config.LOG_FOLDERNAME, filename)
+
+            # Skip directories, only read files
+            if not os.path.isfile(file_path):
+                continue
+
+            # Read each log file line by line
+            with open(file_path, "r") as log_file:
+                for line in log_file:
+                    try:
+                        log_entry = json.loads(line)
+                        # Collect only entries with matching user_id
+                        if log_entry.get("user_id") == user_id:
+                            logs.append(log_entry)
+                    except json.JSONDecodeError:
+                        # Ignore lines that are not JSON
+                        continue
+
+        if not logs:
+            return None
+
+        # Sort logs by timestamp if present, oldest first
+        logs.sort(
+            key=lambda x: datetime.fromisoformat(x["timestamp"].replace("Z", "+00:00"))
+            if "timestamp" in x else datetime.min
+        )
+        total = len(logs)
+        # Apply pagination slicing
+        paginated_logs = logs[offset : offset + limit]
+        return paginated_logs, total

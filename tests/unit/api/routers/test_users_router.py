@@ -196,3 +196,29 @@ class TestUserRouter:
 
         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
         assert "Deactivation failed" in exc_info.value.detail
+
+    async def test_get_user_activity_logs_success(self, mock_db):
+        user_id = 1
+        mocked_logs = [{"action": "login", "timestamp": "2025-08-27T22:00:00Z"}]
+        mocked_total = 1
+
+        with patch.object(UserService, "get_users_activity_logs", new_callable=AsyncMock, return_value=(mocked_logs, mocked_total)):
+            # Call function with default limit and offset
+            response = await users_router.get_user_activity_logs(user_id=user_id, db=mock_db, limit=50, offset=0)
+            print(response)
+            assert response["activities"] == mocked_logs
+            assert response["total"] == mocked_total
+            assert response["limit"] == 50  # default limit
+            assert response["offset"] == 0  # default offset
+            UserService.get_users_activity_logs.assert_awaited_once_with(user_id=user_id, db=mock_db, limit=50, offset=0)
+
+    async def test_get_user_activity_logs_not_found(self, mock_db):
+        user_id = 2
+
+        with patch.object(UserService, "get_users_activity_logs", new_callable=AsyncMock, return_value=(None, 0)):
+            with pytest.raises(HTTPException) as exc_info:
+                await users_router.get_user_activity_logs(user_id=user_id, db=mock_db, limit=50, offset=0)
+            
+            assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+            assert exc_info.value.detail == "User not found or no activity logs available."
+            UserService.get_users_activity_logs.assert_awaited_once_with(user_id=user_id, db=mock_db, limit=50, offset=0)

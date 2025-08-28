@@ -10,6 +10,7 @@ from app.schemas.user import UserCreate, UserUpdate, UserOut, UsersResponse
 from app.database.services.user_service import UserService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
+from app.utils.logger import log
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -22,6 +23,7 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username or email already exists"
         )
+    log.info("User created", user_id=user.id, username=user.username, email=user.email)
     return user
 
 # 🔸 GET /users/me - Get current user profile (async)
@@ -36,7 +38,9 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return await UserService.update_user(db, current_user.id, user_data)
+    response = await UserService.update_user(db, current_user.id, user_data)
+    log.info("User updated", user_id=current_user.id, username=current_user.username, email=current_user.email)
+    return response
 
 # 🔸 DELETE /users/me - Soft delete current user (async)
 @router.delete("/me", status_code=status.HTTP_202_ACCEPTED, name="delete_me")
@@ -44,7 +48,11 @@ async def delete_me(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    user_id = current_user.id
+    username = current_user.username
+    email = current_user.email
     await UserService.delete_user(db, current_user.id)
+    log.info("User deleted", user_id=user_id, username=username, email=email)
     return {"Message": "User Deleted."}
     
 @router.get("/get_all_users", response_model=UsersResponse, dependencies=[require_permission("search_user")])
@@ -108,6 +116,7 @@ async def activate_user(
             detail="Activation failed. User may already be active or not exist.",
         )
     updated_at = datetime.now(tz=timezone.utc).isoformat()
+    log.info("User activated", user_id=user_id, updated_at=updated_at)
     return {"status": "active", "updated_at": updated_at}
 
 @router.post("/{user_id}/deactivate", status_code=status.HTTP_200_OK, dependencies=[require_permission("deactivate_user")])
@@ -123,4 +132,26 @@ async def deactivate_user(
             detail="Deactivation failed. User may already be inactive or not exist.",
         )
     updated_at = datetime.now(tz=timezone.utc).isoformat()
+    log.info("User deactivated", user_id=user_id, updated_at=updated_at, reason=reason)
     return {"status": "inactive", "updated_at": updated_at}
+
+@router.get("/{user_id}/activity_logs", dependencies=[require_permission("view_audit_logs")])
+async def get_user_activity_logs(
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    user_id: int = Path(..., title="User ID to fetch activity logs for"),
+    db: AsyncSession = Depends(get_db),
+):
+    logs, total = await UserService.get_users_activity_logs(db=db, user_id=user_id, limit=limit, offset=offset)
+    if logs is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or no activity logs available.",
+        )
+    return {
+        "user_id": user_id,
+        "total": total,
+        "limit": int(limit),
+        "offset": int(offset),
+        "activities": logs
+        }
