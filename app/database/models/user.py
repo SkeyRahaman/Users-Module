@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from . import Base
 from .mixins import TimestampMixin, StatusMixin, TablenameMixin
 if TYPE_CHECKING:
-    from . import UserRole, UserGroup
+    from . import UserRole, UserGroup, PasswordResetToken
 
 class User(Base, TablenameMixin, TimestampMixin, StatusMixin):
 
@@ -30,6 +30,12 @@ class User(Base, TablenameMixin, TimestampMixin, StatusMixin):
     user_groups: Mapped[List["UserGroup"]] = relationship(
         back_populates="user",
         foreign_keys="[UserGroup.user_id]",
+        lazy="selectin"
+    )
+    password_reset_tokens: Mapped[List["PasswordResetToken"]] = relationship(
+        "PasswordResetToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
         lazy="selectin"
     )
 
