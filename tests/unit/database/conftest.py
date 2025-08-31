@@ -6,10 +6,13 @@ from alembic.config import Config as AlembiConfig
 from alembic import command
 import asyncio
 from sqlalchemy.orm import sessionmaker
+import hashlib
+from datetime import datetime, timedelta
+
 from app.config import Config
 from app.database.models import (
     Base, User, Role, Permission, Group,
-    UserRole, UserGroup, GroupRole, RolePermission
+    UserRole, UserGroup, GroupRole, RolePermission, PasswordResetToken
 )
 import os
 
@@ -78,6 +81,19 @@ async def test_group(db_session: AsyncSession):
     await db_session.commit()
     await db_session.refresh(group)
     return group
+
+@pytest_asyncio.fixture
+async def test_user_with_password_reset_token(db_session: AsyncSession, test_user: User):
+    token = PasswordResetToken(
+            user_id=test_user.id,
+            token_hash=hashlib.sha256(uuid.uuid4().hex.encode()).hexdigest(),
+            expires_at=datetime.now() + timedelta(minutes=10),
+        )
+    db_session.add(token)
+    await db_session.commit()
+    await db_session.refresh(token)
+    await db_session.refresh(test_user)
+    return test_user, token
 
 # ------------------ Generic Link Fixtures ------------------
 @pytest_asyncio.fixture
