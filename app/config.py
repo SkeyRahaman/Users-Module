@@ -9,6 +9,7 @@ class Config:
     ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",30)
     SECRET_KEY = os.getenv("SECRET_KEY","Some random secret key")
     TOKEN_ALGORITHM = os.getenv("TOKEN_ALGORITHM","HS256")
+    PASSWORD_REST_TOKEN_EXPIRE_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_HOURS",1))
 
     # Logging Configuration
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

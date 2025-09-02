@@ -224,3 +224,58 @@ class TestUserService:
         assert result is False
         db_session.rollback.assert_awaited_once()
        
+    async def test_update_user_password_success(self, db_session: AsyncSession, test_user: User):
+        old_hash = test_user.password
+        result = await UserService.update_user_password(db_session, test_user.id, "newpassword123")
+        assert result is True
+        await db_session.refresh(test_user)
+        assert test_user.password != old_hash
+
+    async def test_update_user_password_user_not_found(self, db_session: AsyncSession):
+        result = await UserService.update_user_password(db_session, 999, "somepassword")
+        assert result is False
+
+    async def test_update_user_password_commit_error(self, db_session: AsyncSession):
+        user = User(id=1, is_deleted=False)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        db_session.execute = AsyncMock(return_value=mock_result)
+        db_session.commit = AsyncMock(side_effect=IntegrityError('msg', 'params', 'orig'))
+        db_session.rollback = AsyncMock()
+        result = await UserService.update_user_password(db_session, user.id, "pw")
+        assert result is False
+        db_session.rollback.assert_awaited_once()
+
+    async def test_get_user_by_email_found(self, db_session: AsyncSession, test_user: User):
+        found = await UserService.get_user_by_email(db_session, test_user.email)
+        assert found is not None
+        assert found.id == test_user.id
+
+    async def test_get_user_by_email_not_found(self, db_session: AsyncSession):
+        found = await UserService.get_user_by_email(db_session, "nonexistent@email.com")
+        assert found is None
+
+    async def test_reset_user_password_success(self, db_session: AsyncSession, mocker, test_user: User):
+        # Patch dependencies
+        token_obj = MagicMock()
+        token_obj.token_hash = "dummy-token"
+        mocker.patch("app.database.services.user_service.PasswordResetTokenService.create_password_reset_token", AsyncMock(return_value=token_obj))
+        mock_email = AsyncMock(return_value=True)
+        mocker.patch("app.database.services.user_service.EmailService.send_password_rest_email", mock_email)
+        result = await UserService.reset_user_password(db_session, test_user.id)
+        assert result is True
+        mock_email.assert_awaited_once()
+
+    async def test_reset_user_password_token_fail(self, db_session: AsyncSession, mocker, test_user: User):
+        # Token creation fails
+        mocker.patch("app.database.services.user_service.PasswordResetTokenService.create_password_reset_token", AsyncMock(return_value=None))
+        result = await UserService.reset_user_password(db_session, test_user.id)
+        assert result is None
+
+    async def test_reset_user_password_email_fail(self, db_session: AsyncSession, mocker, test_user: User):
+        token_obj = MagicMock()
+        token_obj.token_hash = "dummy-token"
+        mocker.patch("app.database.services.user_service.PasswordResetTokenService.create_password_reset_token", AsyncMock(return_value=token_obj))
+        mocker.patch("app.database.services.user_service.EmailService.send_password_rest_email", AsyncMock(return_value=False))
+        result = await UserService.reset_user_password(db_session, test_user.id)
+        assert result is False
