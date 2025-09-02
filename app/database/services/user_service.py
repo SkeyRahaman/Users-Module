@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlalchemy import asc, desc, select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -10,6 +9,8 @@ from datetime import datetime
 from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
 from app.schemas.user import UserCreate, UserUpdate
 from app.auth.password_hash import PasswordHasher
+from app.utils.email_service import EmailService
+from app.database.services.password_reset_token_service import PasswordResetTokenService
 from app.config import Config
 
 class UserService:
@@ -79,6 +80,28 @@ class UserService:
         except IntegrityError:
             await db.rollback()
             return False
+        
+    @staticmethod
+    async def update_user_password(db: AsyncSession, user_id: int, new_password: str) -> bool:
+        """
+        Updates the password for a user.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        user.password = PasswordHasher.get_password_hash(new_password)
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
 
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
@@ -91,6 +114,13 @@ class UserService:
     async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
         result = await db.execute(
             select(User).where(User.username == username)
+        )
+        return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+        result = await db.execute(
+            select(User).where(User.email == email)
         )
         return result.scalar_one_or_none()
 
@@ -342,3 +372,20 @@ class UserService:
         # Apply pagination slicing
         paginated_logs = logs[offset : offset + limit]
         return paginated_logs, total
+    
+    @staticmethod
+    async def reset_user_password(db: AsyncSession, user_id: int) -> str | None:
+        """
+        Resets the user's password to a new random password.
+        Returns the new password if successful, None otherwise.
+        """
+        password_rest_token = await PasswordResetTokenService.create_password_reset_token(db, user_id)
+        if not password_rest_token:
+            return None
+        email_success = await EmailService.send_password_rest_email(
+            to_address=(await UserService.get_user_by_id(db, user_id)).email,
+            subject="Password Reset",
+            body=f"Your password reset token is: {password_rest_token.token_hash}"
+        )
+        return email_success
+    
