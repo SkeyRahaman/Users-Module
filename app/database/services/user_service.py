@@ -366,7 +366,7 @@ class UserService:
         # Sort logs by timestamp if present, oldest first
         logs.sort(
             key=lambda x: datetime.fromisoformat(x["timestamp"].replace("Z", "+00:00"))
-            if "timestamp" in x else datetime.min
+            if "timestamp" in x else datetime.min, reverse=True
         )
         total = len(logs)
         # Apply pagination slicing
