@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from app.api.dependencies.database import get_db
 from app.schemas.user import UserCreate, UserUpdate, UserOut, UsersResponse
 from app.database.services.user_service import UserService
+from app.database.services.users_roles_services import UserRoleService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
 from app.utils.logger import log
@@ -24,6 +25,10 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
             detail="Username or email already exists"
         )
     log.info("User created", user_id=user.id, username=user.username, email=user.email)
+    # Assign default role (e.g., role_id=1) to the new user
+    # You might want to adjust the role_id based on your roles setup
+    UserRoleService.assign_user_role(db, user.id, 1, created_by=user.id)
+    log.info("Default role assigned to user", user_id=user.id, role_id=1)
     return user
 
 # 🔸 GET /users/me - Get current user profile (async)
