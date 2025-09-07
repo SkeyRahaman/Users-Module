@@ -25,10 +25,19 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
             detail="Username or email already exists"
         )
     log.info("User created", user_id=user.id, username=user.username, email=user.email)
+
     # Assign default role (e.g., role_id=1) to the new user
     # You might want to adjust the role_id based on your roles setup
-    UserRoleService.assign_user_role(db, user.id, 1, created_by=user.id)
+    update_result = await UserRoleService.assign_user_role(db, user.id, 1, created_by=user.id)
+    if not update_result:
+        log.error("Failed to assign default role to user", user_id=user.id, role_id=1)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to assign default role to user"
+        )
     log.info("Default role assigned to user", user_id=user.id, role_id=1)
+    # temporary code ends here.
+
     return user
 
 # 🔸 GET /users/me - Get current user profile (async)
