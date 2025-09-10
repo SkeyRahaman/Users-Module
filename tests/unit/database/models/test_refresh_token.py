@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models import PasswordResetToken, User
 
-pytestmark = pytest.mark.asyncio  # marks all tests as async
+
+pytestmark = pytest.mark.asyncio
 
 
 class TestPasswordResetTokenModel:
@@ -30,7 +31,7 @@ class TestPasswordResetTokenModel:
         assert token.token_hash == token_hash
         assert token.used is False
 
-        # Allow up to 1s difference in datetime due to db rounding
+        # Allow up to 1s difference in datetime due to DB precision
         assert abs((token.expires_at.replace(tzinfo=None) - expires_at.replace(tzinfo=None)).total_seconds()) < 1
         assert token.created_at is not None
 
@@ -55,7 +56,9 @@ class TestPasswordResetTokenModel:
 
     async def test_token_user_relationship(self, test_user_with_password_reset_token):
         test_user, token = test_user_with_password_reset_token
+        # Confirm bidirectional relationship resolves correctly
         assert token.user == test_user
+        assert token in test_user.password_reset_tokens
 
     async def test_duplicate_token_hash_raises_integrity_error(self, db_session: AsyncSession, test_user_with_password_reset_token):
         test_user, token = test_user_with_password_reset_token
