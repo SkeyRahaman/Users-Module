@@ -2,7 +2,7 @@ import pytest
 import uuid
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import User, Role, Group, UserRole, UserGroup
+from app.database.models import User, Role, Group, UserRole, UserGroup, PasswordResetToken
 
 pytestmark = pytest.mark.asyncio  # marks all tests as async
 
@@ -54,3 +54,13 @@ class TestUserModel:
         assert test_user.user_roles[0].role.name == test_role.name
         assert len(test_user.user_groups) == 1
         assert test_user.user_groups[0].group.name == test_group.name
+
+    async def test_user_password_reset_token(self, db_session: AsyncSession, test_user_with_password_reset_token: PasswordResetToken):
+        test_user, token = test_user_with_password_reset_token
+        assert test_user.password_reset_tokens[0].token_hash == token.token_hash
+        assert test_user.password_reset_tokens[0].user_id == test_user.id
+        
+    async def test_user_refresh_token(self, db_session: AsyncSession, test_user_with_refresh_token):
+        test_user, token = test_user_with_refresh_token
+        assert test_user.refresh_tokens[0].refresh_token_hash == token.refresh_token_hash
+        assert test_user.refresh_tokens[0].user_id == test_user.id

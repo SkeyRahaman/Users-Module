@@ -2,6 +2,8 @@ from sqlalchemy.orm import Mapped, mapped_column, declared_attr, relationship
 from sqlalchemy import Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
 from typing import Optional, TYPE_CHECKING
+from datetime import datetime, timezone
+
 if TYPE_CHECKING:
     from . import User
 
@@ -57,3 +59,14 @@ class AuditMixin:
 class ValidityMixin:
     valid_from: Mapped[Optional[DateTime]] = mapped_column(DateTime(timezone=True), nullable=True)
     valid_until: Mapped[Optional[DateTime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+class TokenMetadataMixin:
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )

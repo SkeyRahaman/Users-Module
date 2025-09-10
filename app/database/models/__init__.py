@@ -17,3 +17,4 @@ from .users_groups_associations import UserGroup
 from .groups_roles_associations import GroupRole
 from .roles_permissions_associations import RolePermission
 from .password_reset_token import PasswordResetToken
+from .refresh_token import RefreshToken

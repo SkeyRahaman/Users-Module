@@ -38,6 +38,12 @@ class User(Base, TablenameMixin, TimestampMixin, StatusMixin):
         cascade="all, delete-orphan",
         lazy="selectin"
     )
+    refresh_tokens = relationship(
+        "RefreshToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"

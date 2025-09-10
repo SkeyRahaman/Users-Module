@@ -12,8 +12,9 @@ from datetime import datetime, timedelta
 from app.config import Config
 from app.database.models import (
     Base, User, Role, Permission, Group,
-    UserRole, UserGroup, GroupRole, RolePermission, PasswordResetToken
+    UserRole, UserGroup, GroupRole, RolePermission, PasswordResetToken, RefreshToken
 )
+from app.auth.jwt import JWTManager
 import os
 
 async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
@@ -94,6 +95,21 @@ async def test_user_with_password_reset_token(db_session: AsyncSession, test_use
     await db_session.refresh(token)
     await db_session.refresh(test_user)
     return test_user, token
+
+@pytest_asyncio.fixture
+async def test_user_with_refresh_token(db_session: AsyncSession, test_user: User):
+    raw_token = JWTManager.encode_refresh_token(data={"sub": test_user.username})
+    refresh_token = RefreshToken(
+        user_id=test_user.id,
+        refresh_token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+        expires_at=datetime.now() + timedelta(minutes=10),
+    )
+    db_session.add(refresh_token)
+    await db_session.commit()
+    await db_session.refresh(refresh_token)
+    await db_session.refresh(test_user)
+    return test_user, refresh_token
+
 
 # ------------------ Generic Link Fixtures ------------------
 @pytest_asyncio.fixture
