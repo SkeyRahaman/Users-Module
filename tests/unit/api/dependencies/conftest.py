@@ -13,4 +13,6 @@ def mock_db():
 def mock_current_user():
     user = MagicMock()
     user.id = 1
+    user.username = "testuser"
+    user.is_deleted = False
     return user

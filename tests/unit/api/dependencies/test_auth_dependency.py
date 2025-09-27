@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from datetime import timedelta
 from fastapi import HTTPException, status
 
-from app.api.dependencies.auth import create_access_token, get_current_user, require_permission
+from app.api.dependencies.auth import create_access_token, get_current_user, require_permission, create_refresh_token, authenticate_refresh_token
 from app.auth.jwt import JWTManager
 from app.database.services.user_service import UserService
 
@@ -18,7 +18,7 @@ class TestAuthDeps:
         payload = {"sub": test_user["username"]}
         token = create_access_token(payload, expire_delta=timedelta(minutes=5))
 
-        decoded = JWTManager.decode(token, audience="your-audience-identifier")
+        decoded = JWTManager.decode_access_token(token, audience="audience")
         assert decoded["sub"] == test_user["username"]
 
     async def test_get_current_user_success(self, monkeypatch, test_user):
@@ -132,3 +132,39 @@ class TestAuthDeps:
                 current_user=mock_current_user
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_create_refresh_token_and_decode(self, test_user):
+        payload = {"sub": test_user["username"]}
+        token = create_refresh_token(payload, expire_delta=timedelta(minutes=5))
+        decoded = JWTManager.decode_refresh_token(token, audience="audience")
+        assert decoded["sub"] == test_user["username"]
+
+    async def test_authenticate_refresh_token_success(self, monkeypatch, mock_db, mock_current_user):
+        refresh_token = create_refresh_token({"sub": mock_current_user.username}, expire_delta=timedelta(minutes=5))
+        monkeypatch.setattr(JWTManager, "decode_refresh_token", lambda t, audience=None: {"sub": mock_current_user.username})
+        async def fake_get_user_by_username(db, username):
+            return mock_current_user
+        monkeypatch.setattr(UserService, "get_user_by_username", fake_get_user_by_username)
+        mock_entry = MagicMock()
+        mock_entry.revoked = False
+        mock_entry.used = False
+        async def fake_validate(db, tokenhash, user_id):
+            return mock_entry
+        monkeypatch.setattr(
+            "app.database.services.refresh_token_service.RefreshTokenService.validate_refresh_token", fake_validate
+        )
+        user = await authenticate_refresh_token(refresh_token, db=mock_db)
+        assert user.username == mock_current_user.username
+
+    async def test_authenticate_refresh_token_expired(self, mock_db):
+        expired_token = create_refresh_token({"sub": "expireduser"}, expire_delta=timedelta(minutes=-1))
+        with pytest.raises(HTTPException) as exc_info:
+            await authenticate_refresh_token(expired_token, db=mock_db)
+        assert exc_info.value.status_code == 401
+        assert "expired" in exc_info.value.detail.lower()
+
+    async def test_authenticate_refresh_token_revoked(self, monkeypatch, mock_db, mock_current_user):
+        mock_current_user.username = "revokeduser"
+        refresh_token = create_refresh_token({"sub": mock_current_user.username}, expire_delta=timedelta(minutes=5))
+        monkeypatch.setattr(JWTManager, "decode_refresh_token", lambda t, audience=None: {"sub": mock_current_user.username})
+    

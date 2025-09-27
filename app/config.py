@@ -7,13 +7,14 @@ class Config:
     DATABASE_URL = os.getenv("DATABASE_URL",f"sqlite+aiosqlite:///./{DEFAULT_DATABASE_NAME}")
     DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{DEFAULT_DATABASE_NAME}")
     ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",30)
+    REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS",30)
     SECRET_KEY = os.getenv("SECRET_KEY","Some random secret key")
     TOKEN_ALGORITHM = os.getenv("TOKEN_ALGORITHM","HS256")
     PASSWORD_REST_TOKEN_EXPIRE_HOURS = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_HOURS",1))
 
     # Logging Configuration
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-    LOG_FILENAME = os.getenv("LOG_FILENAME", "app.log")
+    LOG_FILENAME = os.getenv("LOG_FILENAME", "app.json")
     LOG_FOLDERNAME = os.getenv("LOG_FOLDERNAME", "logs")
     LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", 5_000_000))
     LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", 1))
