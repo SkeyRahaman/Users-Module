@@ -71,7 +71,7 @@ async def test_user(db_session: AsyncSession):
 
 @pytest_asyncio.fixture
 async def token(test_user):
-    return JWTManager.encode(data={"sub": test_user.username})
+    return JWTManager.encode_access_token(data={"sub": test_user.username})
 
 @pytest_asyncio.fixture
 async def client():
@@ -127,4 +127,4 @@ async def admin_user(db_session: AsyncSession):
 
 @pytest_asyncio.fixture
 async def admin_token():
-    return JWTManager.encode(data={"sub": Config.ADMIN_USER['username']})
+    return JWTManager.encode_access_token(data={"sub": Config.ADMIN_USER['username']})

@@ -7,11 +7,10 @@ from app.database.models import User
 from app.api.routers import users as users_router
 from app.schemas.user import UserCreate, UserOut, UserUpdate, UsersResponse
 from app.database.services.user_service import UserService
+from app.database.services.users_roles_services import UserRoleService
 
 @pytest.mark.asyncio
 class TestUserRouter:
-    # 🔸 POST /users/
-    @pytest.mark.asyncio
     async def test_create_user_success(self, mock_db):
         test_data = UserCreate(
             firstname="test",
@@ -20,13 +19,21 @@ class TestUserRouter:
             email="new@example.com",
             password="secure123"
         )
+        # Create a mock user to return from UserService.create_user
         mock_user = MagicMock()
+        mock_user.id = 42
         mock_user.username = "newuser"
+        mock_user.email = "new@example.com"
+        mock_user.is_deleted = False
 
-        with patch.object(UserService, "create_user", new_callable=AsyncMock, return_value=mock_user):
+        # Simulate assign_user_role returning True (success)
+        with patch.object(UserService, "create_user", new_callable=AsyncMock, return_value=mock_user) as create_user_mock, \
+             patch.object(UserRoleService, "assign_user_role", new_callable=AsyncMock, return_value=True) as assign_role_mock:
             response = await users_router.create_user(test_data, mock_db)
             assert response.username == "newuser"
-            UserService.create_user.assert_awaited_once_with(mock_db, test_data)
+            assert response.email == "new@example.com"
+            create_user_mock.assert_awaited_once_with(mock_db, test_data)
+            assign_role_mock.assert_awaited_once_with(mock_db, mock_user.id, 1, created_by=mock_user.id)
 
     # 🔸 GET /users/me
     async def test_get_me(self, mock_current_user):
