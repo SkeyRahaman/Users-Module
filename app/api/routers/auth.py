@@ -77,7 +77,7 @@ async def confirm_password_reset(
     log.info("Password reset successful", extra={"user_id": user_id})
     return {"message": "Password has been reset successfully."}
 
-@router.post("token/refresh", status_code=status.HTTP_200_OK)
+@router.post("/token/refresh", status_code=status.HTTP_200_OK)
 async def refresh_access_token(
     refresh_token: str = Form(...),
     db: AsyncSession = Depends(get_db)
