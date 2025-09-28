@@ -305,3 +305,78 @@ class TestUserRouter:
             assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
             assert "Failed to remove user from group" in exc_info.value.detail
             
+    async def test_assign_role_to_user_success(self, mock_db, mock_current_user):
+        user_id = 10
+        role_id = 5
+        mockrequest = MagicMock()
+        mockrequest.role_id = role_id
+
+        with patch('app.database.services.UserRoleService.assign_user_role', new_callable=AsyncMock) as mock_assign:
+            mock_assign.return_value = True
+
+            response = await users_router.assign_role_to_user(
+                user_id=user_id,
+                request_data=mockrequest,
+                db=mock_db,
+                current_user=mock_current_user,
+            )
+
+            assert response['message'] == "Role assigned to user successfully"
+            mock_assign.assert_awaited_once_with(
+                db=mock_db, user_id=user_id, role_id=role_id, created_by=mock_current_user.id
+                )
+
+    async def test_assign_role_to_user_failure(self, mock_db, mock_current_user):
+        user_id = 10
+        role_id = 5
+        mockrequest = MagicMock()
+        mockrequest.role_id = role_id
+
+        with patch('app.database.services.UserRoleService.assign_user_role', new_callable=AsyncMock) as mock_assign:
+            mock_assign.return_value = False
+
+            with pytest.raises(HTTPException) as excinfo:
+                await users_router.assign_role_to_user(
+                    user_id=user_id,
+                    request_data=mockrequest,
+                    db=mock_db,
+                    current_user=mock_current_user,
+                )
+            assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to assign role to user" in excinfo.value.detail
+
+    async def test_remove_role_from_user_success(self, mock_db, mock_current_user):
+        user_id = 10
+        role_id = 5
+
+        with patch('app.database.services.UserRoleService.remove_user_role', new_callable=AsyncMock) as mock_remove:
+            mock_remove.return_value = True
+
+            response = await users_router.remove_role_from_user(
+                user_id=user_id,
+                role_id=role_id,
+                db=mock_db,
+                _=mock_current_user,
+            )
+
+            assert response['message'] == "Role removed from user successfully"
+            mock_remove.assert_awaited_once_with(db=mock_db, user_id=user_id, role_id=role_id)
+             
+            
+
+    async def test_remove_role_from_user_failure(self, mock_db, mock_current_user):
+        user_id = 10
+        role_id = 5
+
+        with patch('app.database.services.UserRoleService.remove_user_role', new_callable=AsyncMock) as mock_remove:
+            mock_remove.return_value = False
+
+            with pytest.raises(HTTPException) as excinfo:
+                await users_router.remove_role_from_user(
+                    user_id=user_id,
+                    role_id=role_id,
+                    db=mock_db,
+                    _=mock_current_user,
+                )
+            assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to remove role from user" in excinfo.value.detail

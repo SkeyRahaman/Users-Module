@@ -6,7 +6,7 @@ from sqlalchemy import select, func, or_, desc, asc
 from sqlalchemy.orm import joinedload
 
 from app.api.dependencies.database import get_db
-from app.schemas import UserCreate, UserUpdate, UserOut, UsersResponse, AddUserToGroupForUser
+from app.schemas import UserCreate, UserUpdate, UserOut, UsersResponse, AddUserToGroupForUser, AddRoleToUserForUser
 from app.database.services import UserService, UserRoleService, UserGroupService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
@@ -189,7 +189,7 @@ async def add_user_to_group(
         "timestamp": datetime.now()
         }
 
-@router.post("/{user_id}/remove_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("assign_user_to_group")])
+@router.post("/{user_id}/remove_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("remove_user_from_group")])
 async def remove_user_from_group(
     user_id: int,
     group_id: int,
@@ -203,3 +203,33 @@ async def remove_user_from_group(
             detail="Failed to remove user from group. Check if user and group exist or if the user was part of the group."
         )
     return {"message": "User removed from group successfully"}
+
+@router.post("/{user_id}/assign_role", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("assign_role_to_user")])
+async def assign_role_to_user(
+    user_id: int,
+    request_data: AddRoleToUserForUser,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    assigned = await UserRoleService.assign_user_role(db=db, user_id=user_id, role_id=request_data.role_id, created_by=current_user.id)
+    if not assigned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign role to user. Check if user and role exist."
+        )
+    return {"message": "Role assigned to user successfully"}
+
+@router.post("/{user_id}/remove_role", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("assign_role_to_user")])
+async def remove_role_from_user(
+    user_id: int,
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    removed = await UserRoleService.remove_user_role(db=db, user_id=user_id, role_id=role_id)
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove role from user. Check if user and role exist or if the user had that role."
+        )
+    return {"message": "Role removed from user successfully"}

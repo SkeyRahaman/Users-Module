@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.config import Config
 from app.database.models import UserRole
+from app.utils.logger import log
 
 
 class UserRoleService:
@@ -56,9 +57,11 @@ class UserRoleService:
         try:
             await db.commit()
             await db.refresh(user_role)
+            log.info("User role assigned", user_id=user_id, role_id=role_id)
             return user_role
         except IntegrityError:
             await db.rollback()
+            log.error("Failed to assign user role", user_id=user_id, role_id=role_id)
             return None
 
     @staticmethod
@@ -78,9 +81,11 @@ class UserRoleService:
         user_role.is_deleted = True
         try:
             await db.commit()
+            log.info("User role deleted", user_id=user_id, role_id=role_id)
             return True
         except IntegrityError:
             await db.rollback()
+            log.error("Failed to delete user role", user_id=user_id, role_id=role_id)
             return False
 
     @staticmethod
@@ -127,8 +132,10 @@ class UserRoleService:
         user_role.valid_until = datetime.now(timezone.utc)
         try:
             await db.commit()
+            log.info("User role expired", user_id=user_id, role_id=role_id)
             return True
         except IntegrityError:
+            log.error("Failed to expire user role", user_id=user_id, role_id=role_id)
             await db.rollback()
             return False
 
