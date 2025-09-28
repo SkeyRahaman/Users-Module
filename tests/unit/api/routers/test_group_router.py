@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.api.routers import groups as group_router
-from app.database.services.group_service import GroupService
+from app.database.services import GroupService, UserGroupService
 from app.schemas.group import GroupCreate, GroupUpdate
 
 @pytest.mark.asyncio
@@ -110,3 +110,78 @@ class TestGroupRouter:
                 sort_by="name",
                 sort_order="asc"
             )
+    # 🔸 POST /users/{user_id}/add_to_group
+    async def test_add_user_to_group_success(self, mock_db, mock_current_user):
+        user_id = 10
+        group_id = 20
+        mock_request_data = MagicMock()
+        mock_request_data.user_id = user_id
+        with patch.object(
+            UserGroupService, "assign_user_group",
+            new_callable=AsyncMock, return_value=True
+        ) as mock_assign:
+            response = await group_router.add_user_to_group(
+                group_id=group_id,
+                request_data=mock_request_data,
+                db=mock_db,
+                current_user=mock_current_user
+            )
+            assert response["message"] == "User added to group successfully"
+            assert response["group_id"] == group_id
+            assert response["user_id"] == user_id
+            mock_assign.assert_awaited_once_with(
+                db=mock_db, user_id=user_id, group_id=group_id, created_by=mock_current_user.id
+            )
+
+    async def test_add_user_to_group_failure(self, mock_db, mock_current_user):
+        user_id = 10
+        group_id = 20
+        mock_request_data = MagicMock()
+        mock_request_data.user_id = user_id
+        with patch.object(
+            UserGroupService, "assign_user_group",
+            new_callable=AsyncMock, return_value=False
+        ), pytest.raises(HTTPException) as exc_info:
+            await group_router.add_user_to_group(
+                group_id=group_id,
+                request_data=mock_request_data,
+                db=mock_db,
+                current_user=mock_current_user
+            )
+            assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to add user to group" in exc_info.value.detail
+
+    # 🔸 POST /users/{user_id}/remove_from_group
+    async def test_remove_user_from_group_success(self, mock_db, mock_current_user):
+        user_id = 10
+        group_id = 20
+        with patch.object(
+            UserGroupService, "remove_user_group",
+            new_callable=AsyncMock, return_value=True
+        ) as mock_remove:
+            response = await group_router.remove_user_from_group(
+                user_id=user_id,
+                group_id=group_id,
+                db=mock_db,
+                _ =  mock_current_user
+            )
+            assert response["message"] == "User removed from group successfully"
+            mock_remove.assert_awaited_once_with(
+                db=mock_db, group_id=group_id, user_id=user_id
+            )
+
+    async def test_remove_user_from_group_failure(self, mock_db, mock_current_user):
+        user_id = 10
+        group_id = 20
+        with patch.object(
+            UserGroupService, "remove_user_group",
+            new_callable=AsyncMock, return_value=False
+        ), pytest.raises(HTTPException) as exc_info:
+            await group_router.remove_user_from_group(
+                user_id=user_id,
+                group_id=group_id,
+                db=mock_db,
+                _ =  mock_current_user
+            )
+            assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to remove user from group" in exc_info.value.detail
