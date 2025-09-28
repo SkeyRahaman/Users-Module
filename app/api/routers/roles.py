@@ -13,7 +13,6 @@ router = APIRouter(
     tags=["Roles"]
 )
 
-
 # 🔸 POST /roles/ - Create new role
 @router.post("/", response_model=RoleOut, status_code=status.HTTP_201_CREATED, name="create_role")
 async def create_role(
