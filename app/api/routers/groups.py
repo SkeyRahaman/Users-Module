@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from app.api.dependencies.database import get_db
-from app.api.dependencies.auth import get_current_user
+from app.api.dependencies.auth import get_current_user, require_permission
 from app.schemas.group import GroupCreate, GroupUpdate, GroupOut
-from app.database.services.group_service import GroupService
+from app.schemas import AddUserToGroupForGroup
+from app.database.services import GroupService, UserGroupService
+
 from app.database.models import User
 
 
@@ -96,13 +99,51 @@ async def delete_group(
         )
     return {"message": "Group deleted"}
 
+# POST /groups/{id}/add_user - Add user to group
+@router.post("/{group_id}/add_user", name="add_user_to_group", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("assign_user_to_group")])
+async def add_user_to_group(
+    group_id: int,
+    request_data: AddUserToGroupForGroup,
+    db: AsyncSession = Depends(get_db),
+    current_user : User = Depends(get_current_user)
+):
+    db_respons = await UserGroupService.assign_user_group(db=db, user_id=request_data.user_id, group_id=group_id, created_by=current_user.id)
+    if not db_respons:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to add user to group. Check if user and group exist."
+        )
+    return {
+        "message": "User added to group successfully",
+        "group_id": group_id,
+        "user_id": request_data.user_id,
+        "timestamp": datetime.now()
+        }
+
+# POST /group/{id}/remove_user
+@router.post("/{group_id}/remove_user", name="remove_user_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("assign_user_to_group")])
+async def remove_user_from_group(
+    group_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    db_response = await UserGroupService.remove_user_group(db=db, group_id=group_id, user_id=user_id)
+    if not db_response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove user from group. Check if user and group exist or if the user was part of the group."
+        )
+    return {"message": "User removed from group successfully"}
+    
+
 
 # 🔸 GET /groups/name/{name} - Get group by name
 @router.get("/name/{name}", response_model=GroupOut, name="get_group_by_name")
 async def get_group_by_name(
     name: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)  # Requires authentication
+    _: User = Depends(get_current_user)
 ):
     group = await GroupService.get_group_by_name(db, name)
     if not group:
