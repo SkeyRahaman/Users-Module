@@ -6,9 +6,8 @@ from sqlalchemy import select, func, or_, desc, asc
 from sqlalchemy.orm import joinedload
 
 from app.api.dependencies.database import get_db
-from app.schemas.user import UserCreate, UserUpdate, UserOut, UsersResponse
-from app.database.services.user_service import UserService
-from app.database.services.users_roles_services import UserRoleService
+from app.schemas import UserCreate, UserUpdate, UserOut, UsersResponse, AddUserToGroupForUser
+from app.database.services import UserService, UserRoleService, UserGroupService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
 from app.utils.logger import log
@@ -169,3 +168,38 @@ async def get_user_activity_logs(
         "offset": int(offset),
         "activities": logs
         }
+
+@router.post("/{user_id}/add_to_group", dependencies=[require_permission("assign_user_to_group")], status_code=status.HTTP_201_CREATED)
+async def add_user_to_group(
+    user_id: int,
+    request_data: AddUserToGroupForUser,
+    db: AsyncSession = Depends(get_db),
+    current_user : User = Depends(get_current_user)
+):
+    db_respons = await UserGroupService.assign_user_group(db=db, user_id=user_id, group_id=request_data.group_id, created_by=current_user.id)
+    if not db_respons:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to add user to group. Check if user and group exist."
+        )
+    return {
+        "message": "User added to group successfully",
+        "group_id": request_data.group_id,
+        "user_id": user_id,
+        "timestamp": datetime.now()
+        }
+
+@router.post("/{user_id}/remove_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("assign_user_to_group")])
+async def remove_user_from_group(
+    user_id: int,
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    db_response = await UserGroupService.remove_user_group(db=db, group_id=group_id, user_id=user_id)
+    if not db_response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove user from group. Check if user and group exist or if the user was part of the group."
+        )
+    return {"message": "User removed from group successfully"}

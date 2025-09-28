@@ -131,4 +131,5 @@ def require_permission(required_scope: str):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Missing required permission: {required_scope}"
             )
+        log.info("Permission check passed", extra={"user_id": current_user.id, "required_permission": required_scope})
     return Depends(dependency)
