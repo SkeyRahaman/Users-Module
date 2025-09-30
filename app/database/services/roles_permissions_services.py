@@ -81,3 +81,25 @@ class RolePermissionService:
             )
         )
         return result.scalar_one_or_none() is not None
+    
+    @staticmethod
+    async def get_role_permissions(db: AsyncSession, role_id: int) -> list[RolePermission]:
+        """Fetch all active permissions assigned to a role."""
+        result = await db.execute(
+            select(RolePermission).where(
+                RolePermission.role_id == role_id,
+                RolePermission.is_deleted == False
+            )
+        )
+        return result.scalars().all()
+    
+    @staticmethod
+    async def get_permission_roles(db: AsyncSession, permission_id: int) -> list[RolePermission]:
+        """Fetch all active roles assigned to a permission."""
+        result = await db.execute(
+            select(RolePermission).where(
+                RolePermission.permission_id == permission_id,
+                RolePermission.is_deleted == False
+            )
+        )
+        return result.scalars().all()
