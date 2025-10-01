@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.database import get_db
-from app.api.dependencies.auth import get_current_user
-from app.schemas.role import RoleCreate, RoleUpdate, RoleOut
-from app.database.services.role_service import RoleService
+from app.api.dependencies.auth import get_current_user, require_permission
+from app.schemas import RoleCreate, RoleUpdate, RoleOut, AddRoleToUserForRole, AddRoleToGroupForRole, AddPermissionToRoleForRole
+from app.database.services import RoleService, UserRoleService, GroupRoleService, RolePermissionService
 from app.database.models import User
+from app.utils.logger import log
 
 
 router = APIRouter(
@@ -95,3 +96,130 @@ async def delete_role(
             detail="Role not found"
         )
     return {"message": "Role deleted"}
+
+# POST /roles/{role_id}/assign_user/ - Assign role to user
+@router.post("/{role_id}/assign_user", status_code=status.HTTP_201_CREATED, name="assign_role_to_user", dependencies=[require_permission("assign_role_to_user")])
+async def assign_role_to_user(
+    role_id: int,
+    request_data: AddRoleToUserForRole,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    assigned = await UserRoleService.assign_user_role(
+        db=db,
+        user_id=request_data.user_id,
+        role_id=role_id,
+        valid_from= request_data.valid_from,
+        valid_until= request_data.valid_until,
+        created_by=current_user.id
+    )
+    if not assigned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign role to user"
+        )
+    return {"message": "Role assigned to user"}
+
+# POST /roles/{role_id}/remove_user/ - Remove role from user
+@router.post("/{role_id}/remove_user", status_code=status.HTTP_202_ACCEPTED, name="remove_role_from_user", dependencies=[require_permission("assign_role_to_user")])
+async def remove_role_from_user(
+    role_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)  # Requires authentication
+):
+    removed = await UserRoleService.remove_user_role(
+        db=db,
+        user_id=user_id,
+        role_id=role_id
+    )
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove role from user"
+        )
+    return {"message": "Role removed from user"}
+
+# POST /roles/{role_id}/assigne_group/ - Assign role to group
+@router.post("/{role_id}/assign_group", status_code=status.HTTP_201_CREATED, name="assign_role_to_group", dependencies=[require_permission("assign_role_to_user")])
+async def assign_role_to_group(
+    role_id: int,
+    request_data: AddRoleToGroupForRole,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    assigned = await GroupRoleService.assign_group_role(
+        db=db,
+        group_id=request_data.group_id, 
+        role_id=role_id,
+        valid_from= request_data.valid_from,
+        valid_until= request_data.valid_until,
+        created_by=current_user.id
+    )
+    if not assigned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign role to group"
+        )
+    return {"message": "Role assigned to group"}   
+
+# POST /roles/{role_id}/remove_group/ - Remove role from group
+@router.post("/{role_id}/remove_group", status_code=status.HTTP_202_ACCEPTED, name="remove_role_from_group", dependencies=[require_permission("assign_role_to_user")])
+async def remove_role_from_group(
+    role_id: int,
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    removed = await GroupRoleService.remove_group_role(
+        db=db,
+        group_id=group_id,
+        role_id=role_id
+    )
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove role from group"
+        )
+    return {"message": "Role removed from group"} 
+
+# POST /roles/{role_id}/add_permission/ - Add permission to role
+@router.post("/{role_id}/assigne_permission", status_code=status.HTTP_201_CREATED, name="add_permission_to_role", dependencies=[require_permission("assign_role_to_user")])
+async def add_permission_to_role(
+    role_id: int,
+    request_data: AddPermissionToRoleForRole,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    added = await RolePermissionService.assign_role_permission(
+        db=db,
+        permission_id=request_data.permission_id,
+        role_id=role_id,
+        created_by=current_user.id
+    )
+    if not added:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to add permission to role"
+        )
+    return {"message": "Permission added to role"}
+
+# POST /roles/{role_id}/remove_permission/ - Remove permission from role
+@router.post("/{role_id}/remove_permission", status_code=status.HTTP_202_ACCEPTED, name="remove_permission_from_role", dependencies=[require_permission("assign_role_to_user")])
+async def remove_permission_from_role(
+    role_id: int,
+    permission_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    removed = await RolePermissionService.remove_role_permission(
+        db=db,
+        permission_id=permission_id,
+        role_id=role_id
+    )
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove permission from role"
+        )
+    return {"message": "Permission removed from role"}
