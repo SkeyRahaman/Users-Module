@@ -4,9 +4,8 @@ from datetime import datetime
 
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user, require_permission
-from app.schemas.group import GroupCreate, GroupUpdate, GroupOut
-from app.schemas import AddUserToGroupForGroup
-from app.database.services import GroupService, UserGroupService
+from app.schemas import GroupCreate, GroupUpdate, GroupOut, AddUserToGroupForGroup, AddRoleToGroupForGroup
+from app.database.services import GroupService, UserGroupService, GroupRoleService
 
 from app.database.models import User
 
@@ -121,7 +120,7 @@ async def add_user_to_group(
         }
 
 # POST /group/{id}/remove_user
-@router.post("/{group_id}/remove_user", name="remove_user_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("assign_user_to_group")])
+@router.post("/{group_id}/remove_user", name="remove_user_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("remove_user_from_group")])
 async def remove_user_from_group(
     group_id: int,
     user_id: int,
@@ -135,7 +134,50 @@ async def remove_user_from_group(
             detail="Failed to remove user from group. Check if user and group exist or if the user was part of the group."
         )
     return {"message": "User removed from group successfully"}
+
+# POST /groups/{group_id}/assigne_role 
+@router.post("/{group_id}/assigne_role", name="assign_role_to_group", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("remove_user_from_group")])
+async def assign_role_to_group(
+    group_id: int,
+    request_data: AddRoleToGroupForGroup,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db_response = await GroupRoleService.assign_group_role(
+        db=db,
+        group_id=group_id,
+        role_id=request_data.role_id,
+        valid_from= request_data.valid_from,
+        valid_until= request_data.valid_until,
+        created_by=current_user.id
+    )
+    if not db_response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign role to group. Check if role and group exist."
+        )
+    return {
+        "message": "Role assigned to group successfully",
+        "group_id": group_id,
+        "role_id": request_data.role_id,
+        "timestamp": datetime.now()
+        }
     
+# POST /groups/{group_id}/remove_role   
+@router.post("/{group_id}/remove_role", name="remove_role_from_group", status_code=status.HTTP_202_ACCEPTED, dependencies=[require_permission("remove_user_from_group")])
+async def remove_role_from_group(
+    group_id: int,
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    db_response = await GroupRoleService.remove_group_role(db=db, group_id=group_id, role_id=role_id)
+    if not db_response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to remove role from group. Check if role and group exist or if the role was assigned to the group."
+        )
+    return {"message": "Role removed from group successfully"}
 
 
 # 🔸 GET /groups/name/{name} - Get group by name
