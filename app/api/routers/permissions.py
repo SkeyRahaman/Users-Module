@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.database import get_db
-from app.api.dependencies.auth import get_current_user, require_permission
-from app.schemas import PermissionCreate, PermissionUpdate, PermissionOut, AddPermissionToRoleForPermission
-from app.database.services import PermissionService, RolePermissionService
+from app.api.dependencies.auth import get_current_user
+from app.schemas.permission import PermissionCreate, PermissionUpdate, PermissionOut
+from app.database.services.permission_service import PermissionService
 from app.database.models import User
 
 router = APIRouter(
@@ -95,46 +95,3 @@ async def delete_permission(
             detail="Permission not found"
         )
     return {"message": "Permission deleted"}
-
-# POST /permissions/{permission_id}/assigne_roles - Add permission to role
-@router.post("/{permission_id}/assigne_roles", status_code=status.HTTP_201_CREATED, name="add_permission_to_role", dependencies=[require_permission("assign_role_to_user")])
-async def add_permission_to_role(
-    permission_id: int,
-    request_data: AddPermissionToRoleForPermission,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    added = await RolePermissionService.assign_role_permission(
-        db=db,
-        permission_id=permission_id,
-        role_id=request_data.role_id,
-        created_by=current_user.id
-    )
-    if not added:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to add permission to role"
-        )
-    return {"message": "Permission added to role"}
-
-# POST /permissions/{permission_id}/remove_roles - Remove permission from role
-@router.post("/{permission_id}/remove_roles", status_code=status.HTTP_200_OK, name="remove_permission_from_role", dependencies=[require_permission("assign_role_to_user")])
-async def remove_permission_from_role(
-    permission_id: int,
-    role_id: int,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user)
-):
-    removed = await RolePermissionService.remove_role_permission(
-        db=db,
-        permission_id=permission_id,
-        role_id=role_id
-    )
-    if not removed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to remove permission from role"
-        )
-    return {"message": "Permission removed from role"}
-
-# POST /permissions/{permission_id}/roles - List roles for a permission
