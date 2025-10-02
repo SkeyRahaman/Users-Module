@@ -1,13 +1,14 @@
 import pytest
 from fastapi import HTTPException, status
 from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime
 
 from app.api.routers import permissions as permission_router
-from app.database.services.permission_service import PermissionService
-from app.schemas.permission import PermissionCreate, PermissionUpdate
+from app.database.services import PermissionService, RolePermissionService
+from app.schemas import PermissionCreate, PermissionUpdate, AddPermissionToRoleForPermission, RoleOut
 
 @pytest.mark.asyncio
-class TestPermissionRouter:
+class Testpermission_router:
 
     async def test_create_permission_success(self, mock_db, mock_permission):
         with patch.object(PermissionService, "create_permission", new_callable=AsyncMock, return_value=mock_permission):
@@ -110,3 +111,77 @@ class TestPermissionRouter:
                 sort_by="name",
                 sort_order="asc"
             )
+
+    async def test_add_permission_to_role_success(self, mock_db):
+        with patch.object(
+            RolePermissionService, "assign_role_permission", new_callable=AsyncMock
+        ) as mock_assign:
+            mock_assign.return_value = True
+            request_data = AddPermissionToRoleForPermission(role_id=1)
+            response = await permission_router.add_permission_to_role(
+                permission_id=1, request_data=request_data, db=mock_db, current_user=MagicMock(id=123)
+            )
+            assert response['message'] == "Permission added to role"
+            mock_assign.assert_awaited_once_with(db=mock_db, permission_id=1, role_id=1, created_by=123)
+
+    async def test_add_permission_to_role_failure(self, mock_db):
+        with patch.object(
+            RolePermissionService, "assign_role_permission", new_callable=AsyncMock
+        ) as mock_assign:
+            mock_assign.return_value = False
+            request_data = AddPermissionToRoleForPermission(role_id=2)
+            with pytest.raises(HTTPException) as excinfo:
+                await permission_router.add_permission_to_role(
+                    permission_id=1, request_data=request_data, db=mock_db, current_user=MagicMock(id=123)
+                )
+            assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to add permission to role" in excinfo.value.detail
+
+    async def test_remove_permission_from_role_success(self, mock_db):
+        with patch.object(
+            RolePermissionService, "remove_role_permission", new_callable=AsyncMock
+        ) as mock_remove:
+            mock_remove.return_value = True
+            response = await permission_router.remove_permission_from_role(
+                permission_id=1, role_id=1, db=mock_db, _=MagicMock()
+            )
+            assert response["message"] == "Permission removed from role"
+            mock_remove.assert_awaited_once_with(db=mock_db, permission_id=1, role_id=1)
+
+    async def test_remove_permission_from_role_failure(self, mock_db):
+        with patch.object(
+            RolePermissionService, "remove_role_permission", new_callable=AsyncMock
+        ) as mock_remove:
+            mock_remove.return_value = False
+            with pytest.raises(HTTPException) as excinfo:
+                await permission_router.remove_permission_from_role(
+                    permission_id=1, role_id=1, db=mock_db, _=MagicMock()
+                )
+            assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Failed to remove permission from role" in excinfo.value.detail
+
+    async def test_list_roles_for_permission_success(self, mock_db):
+        mock_roles = [RoleOut(id=1, name="Admin", created = datetime.now()), RoleOut(id=2, name="User", created = datetime.now())]
+        with patch.object(
+            RolePermissionService, "get_all_roles_for_permission", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = mock_roles
+            response = await permission_router.list_roles_for_permission(
+                permission_id=1, db=mock_db, _=MagicMock()
+            )
+            assert isinstance(response, list)
+            assert response[0].id == 1
+            assert response[1].name == "User"
+            mock_get.assert_awaited_once_with(db=mock_db, permission_id=1)
+
+    async def test_list_roles_for_permission_not_found(self, mock_db):
+        with patch.object(
+            RolePermissionService, "get_all_roles_for_permission", new_callable=AsyncMock
+        ) as mock_get:
+            mock_get.return_value = None
+            with pytest.raises(HTTPException) as excinfo:
+                await permission_router.list_roles_for_permission(
+                    permission_id=999, db=mock_db, _=MagicMock()
+                )
+            assert excinfo.value.status_code == status.HTTP_404_NOT_FOUND
+            assert "Permission not found" in excinfo.value.detail

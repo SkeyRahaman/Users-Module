@@ -15,6 +15,7 @@ from app.auth.password_hash import PasswordHasher
 from app.main import app
 from app.api.dependencies.database import get_db
 from app.config import Config
+from app.database.models import RolePermission
 
 # ------------------ DB Session Fixture ------------------
 async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
@@ -82,7 +83,7 @@ async def client():
 @pytest_asyncio.fixture
 async def test_group(db_session: AsyncSession):
     group = Group(
-        name = "Test Group"
+        name = f"Test Group {os.urandom(4).hex()}"
     )
     db_session.add(group)
     await db_session.commit()
@@ -91,28 +92,42 @@ async def test_group(db_session: AsyncSession):
     await db_session.delete(group)
     await db_session.commit()
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_role(db_session: AsyncSession):
     role = Role(
-        name = "Test role"
+        name = f"Test Role {os.urandom(4).hex()}"
     )
     db_session.add(role)
     await db_session.commit()
     await db_session.refresh(role)
     yield role
-    await db_session.delete(role)
+    role.is_deleted = True
     await db_session.commit()
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_permission(db_session: AsyncSession):
     permission = Permission(
-        name = "Test permission"
+        name = f"test_permission_{os.urandom(4).hex()}",
     )
     db_session.add(permission)
     await db_session.commit()
     await db_session.refresh(permission)
     yield permission
-    await db_session.delete(permission)
+    permission.is_deleted = True
+    await db_session.commit()
+
+@pytest_asyncio.fixture
+async def test_role_permission(db_session: AsyncSession, test_role: Role, test_permission: Permission):
+    role_permission = RolePermission(
+        role_id = test_role.id,
+        permission_id = test_permission.id,
+        created_by = 1
+    )
+    db_session.add(role_permission)
+    await db_session.commit()
+    await db_session.refresh(role_permission)
+    yield test_role, test_permission
+    await db_session.delete(role_permission)
     await db_session.commit()
 
 @pytest_asyncio.fixture

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
 
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user, require_permission
-from app.schemas import PermissionCreate, PermissionUpdate, PermissionOut, AddPermissionToRoleForPermission
+from app.schemas import PermissionCreate, PermissionUpdate, PermissionOut, AddPermissionToRoleForPermission, RoleOut
 from app.database.services import PermissionService, RolePermissionService
 from app.database.models import User
 
@@ -138,3 +139,19 @@ async def remove_permission_from_role(
     return {"message": "Permission removed from role"}
 
 # POST /permissions/{permission_id}/roles - List roles for a permission
+@router.get("/{permission_id}/roles", response_model=List[RoleOut], status_code=status.HTTP_200_OK, name="list_roles_for_permission")
+async def list_roles_for_permission(
+    permission_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    roles = await RolePermissionService.get_all_roles_for_permission(
+        db=db,
+        permission_id=permission_id
+    )
+    if roles is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Permission not found"
+        )
+    return roles
