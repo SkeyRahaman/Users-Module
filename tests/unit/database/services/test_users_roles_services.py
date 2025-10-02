@@ -100,3 +100,23 @@ class TestUserRoleService:
 
     async def test_check_user_role_exists_false(self, db_session: AsyncSession, test_user, test_role):
         assert await UserRoleService.check_user_role_exists(db_session, test_user.id, test_role.id) is False
+
+    async def test_getallrolesforuser_returns_roles(self, db_session: AsyncSession, test_user, test_role):
+        # Assign the role to user
+        await UserRoleService.assign_user_role(db_session, test_user.id, test_role.id)
+        roles = await UserRoleService.get_all_roles_for_user(db_session, test_user.id)
+        assert roles is not None
+        assert any(role.id == test_role.id for role in roles)
+    async def test_getallrolesforuser_returns_none_if_user_missing(self, db_session: AsyncSession):
+        roles = await UserRoleService.get_all_roles_for_user(db_session, user_id=999999)
+        assert roles is None
+
+    async def test_getallusersforrole_returns_users(self, db_session: AsyncSession, test_user, test_role):
+        await UserRoleService.assign_user_role(db_session, test_user.id, test_role.id)
+        users = await UserRoleService.get_all_users_for_role(db_session, test_role.id)
+        assert users is not None
+        assert any(user.id == test_user.id for user in users)
+
+    async def test_getallusersforrole_returns_none_if_role_missing(self, db_session: AsyncSession):
+        users = await UserRoleService.get_all_users_for_role(db_session, role_id=999999)
+        assert users is None
