@@ -91,6 +91,11 @@ class RolePermissionService:
     @staticmethod
     async def get_all_permissions_for_role(db: AsyncSession, role_id: int) -> list[RolePermission]:
         """Fetch all active permissions assigned to a role."""
+        #check if role exists
+        role_result = await db.execute(select(Role).where(Role.id == role_id))
+        role = role_result.scalar_one_or_none()
+        if not role:
+            return None
         result = await db.execute(
             select(Permission)
             .join(RolePermission, Permission.id == RolePermission.permission_id)

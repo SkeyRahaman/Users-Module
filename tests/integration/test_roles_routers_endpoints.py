@@ -145,3 +145,117 @@ class TestRoleRouter:
         assert response.status_code == status.HTTP_200_OK
         names = [r["name"] for r in response.json()]
         assert names.index("alpha") < names.index("beta")
+
+    async def test_assign_role_to_user_success(self, client: AsyncClient, admin_token: str, test_user: dict, test_role: dict):
+        url = app.url_path_for("assign_role_to_user", role_id=test_role.id)
+        payload = {"user_id": test_user.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == 201
+        assert "Role assigned to user" in response.json().get("message", "")
+
+    async def test_assign_role_to_user_failure(self, client: AsyncClient, admin_token: str, test_user: dict, test_role: dict):
+        url = app.url_path_for("assign_role_to_user", role_id=test_role.id)
+        payload = {"user_id": test_user.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer invalid_token"})
+        assert response.status_code != status.HTTP_200_OK
+
+    async def test_remove_role_from_user_success(self, client: AsyncClient, admin_token: str, test_user_role):
+        test_user, test_role = test_user_role
+        url = app.url_path_for("remove_role_from_user", user_id=test_user.id)
+        payload = {"role_id":test_role.id}
+        response = await client.post(url, params=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert "Role removed from user" in response.json().get("message", "")
+
+    async def test_remove_role_from_user_failure(self, client: AsyncClient, admin_token: str, test_user: dict, test_role: dict):
+        url = app.url_path_for("remove_role_from_user", user_id=test_user.id)
+        payload = {"role_id":test_role.id}
+        response = await client.post(url, params=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code != status.HTTP_202_ACCEPTED
+
+    async def test_assign_role_to_group_success(self, client: AsyncClient, admin_token: str, test_group: dict, test_role: dict):
+        url = app.url_path_for("assign_role_to_group", role_id=test_role.id)
+        payload = {"group_id": test_group.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "Role assigned to group" in response.json().get("message", "")
+
+    async def test_assign_role_to_group_failure(self, client: AsyncClient, admin_token: str, test_group: dict, test_role: dict):
+        url = app.url_path_for("assign_role_to_group", role_id=test_role.id)
+        payload = {"group_id": test_group.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer invalid_token"})
+        assert response.status_code != status.HTTP_201_CREATED
+
+    async def test_remove_role_from_group_success(self, client: AsyncClient, admin_token: str, test_group_role):
+        test_group, test_role = test_group_role
+        url = app.url_path_for("remove_role_from_group", role_id=test_role.id)
+        payload = {"group_id": test_group.id}
+        response = await client.post(url, params=payload ,headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert "Role removed from group" in response.json().get("message", "")
+
+    async def test_remove_role_from_group_failure(self, client: AsyncClient, admin_token: str, test_group: dict, test_role: dict):
+        url = app.url_path_for("remove_role_from_group", role_id=test_role.id)
+        payload = {"group_id": test_group.id}
+        response = await client.post(url, params=payload ,headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code != status.HTTP_202_ACCEPTED
+
+    async def test_get_users_for_role_success(self, client: AsyncClient, admin_token: str, test_role: dict):
+        url = app.url_path_for("get_users_for_role", role_id=test_role.id)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), list)
+
+    async def test_get_users_for_role_failure(self, client: AsyncClient, admin_token: str):
+        url = app.url_path_for("get_users_for_role", role_id=999999)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_get_groups_for_role_success(self, client: AsyncClient, admin_token: str, test_role: dict):
+        url = app.url_path_for("get_groups_for_role", role_id=test_role.id)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), list)
+
+    async def test_get_groups_for_role_failure(self, client: AsyncClient, admin_token: str):
+        url = app.url_path_for("get_groups_for_role", role_id=999999)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_add_permission_to_role_success(self, client: AsyncClient, admin_token: str, test_role: dict, test_permission: dict):
+        url = app.url_path_for("add_permission_to_role", role_id=test_role.id)
+        payload = {"permission_id": test_permission.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "Permission added to role" in response.json().get("message", "")
+
+    async def test_add_permission_to_role_failure(self, client: AsyncClient, admin_token: str, test_role: dict, test_permission: dict):
+        url = app.url_path_for("add_permission_to_role", role_id=test_role.id)
+        payload = {"permission_id": test_permission.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer invalid_token"})
+        assert response.status_code != status.HTTP_201_CREATED
+
+    async def test_remove_permission_from_role_success(self, client: AsyncClient, admin_token: str, test_role_permission):
+        test_role, test_permission = test_role_permission
+        url = app.url_path_for("remove_permission_from_role", role_id=test_role.id)
+        payload = {"permission_id": test_permission.id}
+        response = await client.post(url, params=payload ,headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert "Permission removed from role" in response.json().get("message", "")
+
+    async def test_remove_permission_from_role_failure(self, client: AsyncClient, admin_token: str, test_role: dict, test_permission: dict):
+        url = app.url_path_for("remove_permission_from_role", role_id=test_role.id)
+        payload = {"permission_id": test_permission.id}
+        response = await client.post(url, params=payload ,headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code != status.HTTP_202_ACCEPTED
+
+    async def test_get_permissions_for_role_success(self, client: AsyncClient, admin_token: str, test_role: dict):
+        url = app.url_path_for("get_permissions_for_role", role_id=test_role.id)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), list)
+
+    async def test_get_permissions_for_role_failure(self, client: AsyncClient, admin_token: str):
+        url = app.url_path_for("get_permissions_for_role", role_id=999999)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
