@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.config import Config
-from app.database.models import UserRole
+from app.database.models import UserRole, Role, User
 from app.utils.logger import log
 
 
@@ -150,3 +150,41 @@ class UserRoleService:
             )
         )
         return result.scalar_one_or_none() is not None
+    
+    @staticmethod
+    async def get_all_roles_for_user(db: AsyncSession, user_id: int) -> list[UserRole]:
+        """Fetch all active roles assigned to a user."""
+        #check if user exists
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalar_one_or_none()
+        if not user:
+            return None
+        result = await db.execute(
+            select(Role)
+            .join(UserRole, Role.id == UserRole.role_id)
+            .where(
+                UserRole.user_id == user_id,
+                UserRole.is_deleted == False,
+                Role.is_deleted == False
+            )
+        )
+        return result.scalars().all()
+    
+    @staticmethod
+    async def get_all_users_for_role(db: AsyncSession, role_id: int) -> list[User]:
+        """Fetch all active users assigned to a role."""
+        #check if role exists
+        role_result = await db.execute(select(Role).where(Role.id == role_id))
+        role = role_result.scalar_one_or_none()
+        if not role:
+            return None
+        result = await db.execute(
+            select(User)
+            .join(UserRole, User.id == UserRole.user_id)
+            .where(
+                UserRole.role_id == role_id,
+                UserRole.is_deleted == False,
+                User.is_active == True
+            )
+        )
+        return result.scalars().all()
