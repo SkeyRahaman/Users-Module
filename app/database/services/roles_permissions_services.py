@@ -1,8 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timezone
-from app.database.models import RolePermission
+from app.database.models import RolePermission, Role, Permission
 
 
 class RolePermissionService:
@@ -83,10 +82,12 @@ class RolePermissionService:
         return result.scalar_one_or_none() is not None
     
     @staticmethod
-    async def get_role_permissions(db: AsyncSession, role_id: int) -> list[RolePermission]:
+    async def get_all_permissions_for_role(db: AsyncSession, role_id: int) -> list[RolePermission]:
         """Fetch all active permissions assigned to a role."""
         result = await db.execute(
-            select(RolePermission).where(
+            select(Permission)
+            .join(RolePermission, Permission.id == RolePermission.permission_id)
+            .where(
                 RolePermission.role_id == role_id,
                 RolePermission.is_deleted == False
             )
@@ -94,10 +95,12 @@ class RolePermissionService:
         return result.scalars().all()
     
     @staticmethod
-    async def get_permission_roles(db: AsyncSession, permission_id: int) -> list[RolePermission]:
+    async def get_all_roles_for_permission(db: AsyncSession, permission_id: int) -> list[Role]:
         """Fetch all active roles assigned to a permission."""
         result = await db.execute(
-            select(RolePermission).where(
+            select(Role)
+            .join(RolePermission, Role.id == RolePermission.role_id)
+            .where(
                 RolePermission.permission_id == permission_id,
                 RolePermission.is_deleted == False
             )
