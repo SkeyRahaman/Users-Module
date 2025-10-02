@@ -100,3 +100,49 @@ class TestPermissionRouter:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) >= 3
         assert any(p["name"] == "perm_1" for p in response.json())
+
+    async def test_assign_permission_to_role_success(self, client: AsyncClient, admin_token: str, test_permission, test_role):
+        url = app.url_path_for("add_permission_to_role", permission_id=test_permission.id)
+        payload = {"role_id": test_role.id}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "Permission added to role" in response.json()["message"]
+
+    async def test_assign_permission_to_role_fail(self, client: AsyncClient, admin_token: str, test_permission):
+        url = app.url_path_for("add_permission_to_role", permission_id=test_permission.id)
+        # invalid/nonexistent role id
+        payload = {"role_id": 999999}
+        response = await client.post(url, json=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        print(response.json())
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Failed to add permission to role" in response.json()["detail"]
+
+    async def test_remove_permission_from_role_success(self, client: AsyncClient, admin_token: str, test_role_permission):
+        test_role, test_permission = test_role_permission
+        url = app.url_path_for("remove_permission_from_role", permission_id=test_permission.id)
+        payload = {"role_id": test_role.id}
+        response = await client.post(url, params=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        assert "Permission removed from role" in response.json()["message"]
+
+    async def test_remove_permission_from_role_fail(self, client: AsyncClient, admin_token: str, test_permission):
+        url = app.url_path_for("remove_permission_from_role", permission_id=test_permission.id)
+        payload = {"role_id": 999999}
+        response = await client.post(url, params=payload, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Failed to remove permission from role" in response.json()["detail"]
+
+    async def test_list_roles_for_permission_success(self, client: AsyncClient, admin_token: str,test_role_permission):
+        test_role, test_permission = test_role_permission
+        url = app.url_path_for("list_roles_for_permission", permission_id=test_permission.id)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), list)
+        assert any(role["id"] == test_role.id for role in response.json())
+
+    async def test_list_roles_for_permission_not_found(self, client: AsyncClient, admin_token: str):
+        url = app.url_path_for("list_roles_for_permission", permission_id=999999)
+        response = await client.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "Permission not found" in response.json()["detail"]
+
