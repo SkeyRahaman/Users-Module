@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.config import Config
-from app.database.models import GroupRole
+from app.database.models import GroupRole, Role, Group
 
 
 class GroupRoleService:
@@ -143,3 +143,41 @@ class GroupRoleService:
             )
         )
         return result.scalar_one_or_none() is not None
+    
+    @staticmethod
+    async def get_all_groups_for_role(db: AsyncSession, role_id: int) -> list[int] | None:
+        """Retrieve all groups assigned to a specific role."""
+        #check if role exists
+        role_result = await db.execute(select(Role).where(Role.id == role_id))
+        role = role_result.scalar_one_or_none()
+        if not role:
+            return None
+        result = await db.execute(
+            select(Group)
+            .join(GroupRole, Group.id == GroupRole.group_id)
+            .where(
+                GroupRole.role_id == role_id,
+                GroupRole.is_deleted == False,
+                Group.is_deleted == False
+            )
+        )
+        return result.scalars().all()
+    
+    @staticmethod
+    async def get_all_roles_for_group(db: AsyncSession, group_id: int) -> list[Role] | None:
+        """Fetch all active roles assigned to a group."""
+        #check if group exists
+        group_result = await db.execute(select(Group).where(Group.id == group_id))
+        group = group_result.scalar_one_or_none()
+        if not group:
+            return None
+        result = await db.execute(
+            select(Role)
+            .join(GroupRole, Role.id == GroupRole.role_id)
+            .where(
+                GroupRole.group_id == group_id,
+                GroupRole.is_deleted == False,
+                Role.is_deleted == False
+            )
+        )
+        return result.scalars().all()

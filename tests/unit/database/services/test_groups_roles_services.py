@@ -99,3 +99,27 @@ class TestGroupRoleService:
 
     async def test_check_group_role_exists_false(self, db_session: AsyncSession, test_group, test_role):
         assert await GroupRoleService.check_group_role_exists(db_session, test_group.id, test_role.id) is False
+
+    async def test_get_all_roles_for_group_returns_roles(self, db_session: AsyncSession, test_group, test_role):
+        # Assign role to group
+        await GroupRoleService.assign_group_role(db_session, test_group.id, test_role.id)
+        roles = await GroupRoleService.get_all_roles_for_group(db_session, test_group.id)
+        assert roles is not None
+        assert len(roles) > 0
+        assert any(r.id == test_role.id for r in roles)
+
+    async def test_get_all_roles_for_group_returns_none_for_nonexistent_group(self, db_session: AsyncSession):
+        roles = await GroupRoleService.get_all_roles_for_group(db_session, -12345)
+        assert roles is None
+
+    async def test_get_all_groups_for_role_returns_groups(self, db_session: AsyncSession, test_group, test_role):
+        # Assign role to group
+        await GroupRoleService.assign_group_role(db_session, test_group.id, test_role.id)
+        groups = await GroupRoleService.get_all_groups_for_role(db_session, test_role.id)
+        assert groups is not None
+        assert len(groups) > 0
+        assert any(g.id == test_group.id for g in groups)
+
+    async def test_get_all_groups_for_role_returns_none_for_nonexistent_role(self, db_session: AsyncSession):
+        groups = await GroupRoleService.get_all_groups_for_role(db_session, -12345)
+        assert groups is None
