@@ -50,20 +50,20 @@ class TestRolePermissionService:
 
     async def test_get_role_permissions_returns_active_permissions(self, db_session: AsyncSession, test_link_role_permission):
         role, permission = test_link_role_permission
-        permissions = await RolePermissionService.get_role_permissions(db_session, role.id)
-        assert any(p.permission_id == permission.id and p.is_deleted is False for p in permissions)
+        permissions = await RolePermissionService.get_all_permissions_for_role(db_session, role.id)
+        assert any(p.id == permission.id and p.is_deleted is False for p in permissions)
 
     async def test_get_permission_roles_returns_active_roles(self, db_session: AsyncSession, test_link_role_permission):
         role, permission = test_link_role_permission
-        roles = await RolePermissionService.get_permission_roles(db_session, permission.id)
-        assert any(r.role_id == role.id and r.is_deleted is False for r in roles)
+        roles = await RolePermissionService.get_all_roles_for_permission(db_session, permission.id)
+        assert any(r.id == role.id and r.is_deleted is False for r in roles)
 
     async def test_get_role_permissions_with_no_permissions(self, db_session: AsyncSession, test_role):
-        permissions = await RolePermissionService.get_role_permissions(db_session, test_role.id)
+        permissions = await RolePermissionService.get_all_permissions_for_role(db_session, test_role.id)
         assert isinstance(permissions, list)
         assert len(permissions) == 0
 
     async def test_get_permission_roles_with_no_roles(self, db_session: AsyncSession, test_permission):
-        roles = await RolePermissionService.get_permission_roles(db_session, test_permission.id)
+        roles = await RolePermissionService.get_all_roles_for_permission(db_session, test_permission.id)
         assert isinstance(roles, list)
         assert len(roles) == 0
