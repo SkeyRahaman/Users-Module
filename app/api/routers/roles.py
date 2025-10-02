@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user, require_permission
-from app.schemas import RoleCreate, RoleUpdate, RoleOut, AddRoleToUserForRole, AddRoleToGroupForRole, AddPermissionToRoleForRole
+from app.schemas import RoleCreate, RoleUpdate, RoleOut, AddRoleToUserForRole, AddRoleToGroupForRole, AddPermissionToRoleForRole, PermissionOut, UserOut, GroupOut
 from app.database.services import RoleService, UserRoleService, GroupRoleService, RolePermissionService
 from app.database.models import User
 from app.utils.logger import log
@@ -140,6 +140,21 @@ async def remove_role_from_user(
         )
     return {"message": "Role removed from user"}
 
+#GET /roles/{role_id}/users - Get all users for a role
+@router.get("/{role_id}/users", response_model=list[UserOut], name="get_users_for_role", dependencies=[require_permission("view_roles")])
+async def get_users_for_role(
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    users = await UserRoleService.get_all_users_for_role(db, role_id)
+    if users is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Role not found"
+        )
+    return users
+
 # POST /roles/{role_id}/assigne_group/ - Assign role to group
 @router.post("/{role_id}/assign_group", status_code=status.HTTP_201_CREATED, name="assign_role_to_group", dependencies=[require_permission("assign_role_to_user")])
 async def assign_role_to_group(
@@ -183,6 +198,21 @@ async def remove_role_from_group(
         )
     return {"message": "Role removed from group"} 
 
+# GET /roles/{role_id}/groups - Get all groups for a role
+@router.get("/{role_id}/groups", response_model=list[GroupOut], name="get_groups_for_role", dependencies=[require_permission("view_roles")])
+async def get_groups_for_role(
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    groups = await GroupRoleService.get_all_groups_for_role(db, role_id)
+    if groups is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Role not found"
+        )
+    return groups
+
 # POST /roles/{role_id}/add_permission/ - Add permission to role
 @router.post("/{role_id}/assigne_permission", status_code=status.HTTP_201_CREATED, name="add_permission_to_role", dependencies=[require_permission("assign_role_to_user")])
 async def add_permission_to_role(
@@ -223,3 +253,18 @@ async def remove_permission_from_role(
             detail="Failed to remove permission from role"
         )
     return {"message": "Permission removed from role"}
+
+# GET /roles/{role_id}/permissions - Get all permissions for a role
+@router.get("/{role_id}/permissions", response_model=list[PermissionOut], name="get_permissions_for_role", dependencies=[require_permission("view_roles")])
+async def get_permissions_for_role(
+    role_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    permissions = await RolePermissionService.get_all_permissions_for_role(db, role_id)
+    if permissions is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Role not found"
+        )
+    return permissions
