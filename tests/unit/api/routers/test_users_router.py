@@ -380,3 +380,35 @@ class TestUserRouter:
                 )
             assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
             assert "Failed to remove role from user" in excinfo.value.detail
+
+    async def test_get_groups_of_user_success(self, mock_db, mock_current_user):
+        user_id = 10
+        groups = [MagicMock(id=1), MagicMock(id=2)]
+        with patch.object(users_router.UserGroupService, "get_all_groups_for_user", new_callable=AsyncMock, return_value=groups) as mock_groups:
+            response = await users_router.get_groups_of_user(user_id, mock_db, mock_current_user)
+            assert response == groups
+            mock_groups.assert_awaited_once_with(db=mock_db, user_id=10)
+
+    async def test_get_groups_of_user_notfound(self, mock_db, mock_current_user):
+        user_id = 10
+        with patch.object(users_router.UserGroupService, "get_all_groups_for_user", new_callable=AsyncMock, return_value=None):
+            with pytest.raises(HTTPException) as excinfo:
+                await users_router.get_groups_of_user(user_id, mock_db, mock_current_user)
+            assert excinfo.value.status_code == status.HTTP_404_NOT_FOUND
+            assert "User not found or no groups assigned" in excinfo.value.detail
+
+    async def test_get_roles_of_user_success(self, mock_db, mock_current_user):
+        user_id = 12
+        roles = [MagicMock(id=5), MagicMock(id=6)]
+        with patch.object(users_router.UserRoleService, "get_all_roles_for_user", new_callable=AsyncMock, return_value=roles) as mock_roles:
+            response = await users_router.get_roles_of_user(user_id, mock_db, mock_current_user)
+            assert response == roles
+            mock_roles.assert_awaited_once_with(db=mock_db, user_id=12)
+
+    async def test_get_roles_of_user_notfound(self, mock_db, mock_current_user):
+        user_id = 12
+        with patch.object(users_router.UserRoleService, "get_all_roles_for_user", new_callable=AsyncMock, return_value=None):
+            with pytest.raises(HTTPException) as excinfo:
+                await users_router.get_roles_of_user(user_id, mock_db, mock_current_user)
+            assert excinfo.value.status_code == status.HTTP_404_NOT_FOUND
+            assert "User not found or no roles assigned" in excinfo.value.detail
