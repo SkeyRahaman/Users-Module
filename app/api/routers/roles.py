@@ -105,7 +105,7 @@ async def assign_role_to_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    assigned = await UserRoleService.assign_user_role(
+    assigned = await UserRoleService.assigne_user_role(
         db=db,
         user_id=request_data.user_id,
         role_id=role_id,
