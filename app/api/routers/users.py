@@ -6,7 +6,7 @@ from sqlalchemy import select, func, or_, desc, asc
 from sqlalchemy.orm import joinedload
 
 from app.api.dependencies.database import get_db
-from app.schemas import UserCreate, UserUpdate, UserOut, UsersResponse, AddUserToGroupForUser, AddRoleToUserForUser
+from app.schemas import UserCreate, UserUpdate, UserOut, UsersResponse, AddUserToGroupForUser, AddRoleToUserForUser, GroupOut, RoleOut
 from app.database.services import UserService, UserRoleService, UserGroupService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
@@ -204,6 +204,21 @@ async def remove_user_from_group(
         )
     return {"message": "User removed from group successfully"}
 
+# Get /users/{user_id}/groups - Get groups of a user
+@router.get("/{user_id}/groups", name="get_groups_of_user", response_model=List[GroupOut], status_code=status.HTTP_200_OK, dependencies=[require_permission("remove_user_from_group")])
+async def get_groups_of_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    groups = await UserGroupService.get_all_groups_for_user(db=db, user_id=user_id)
+    if groups is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or no groups assigned"
+        )
+    return groups
+
 @router.post("/{user_id}/assign_role", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("assign_role_to_user")])
 async def assign_role_to_user(
     user_id: int,
@@ -233,3 +248,18 @@ async def remove_role_from_user(
             detail="Failed to remove role from user. Check if user and role exist or if the user had that role."
         )
     return {"message": "Role removed from user successfully"}
+
+# GET /users/{user_id}/roles - Get roles of a user
+@router.get("/{user_id}/roles", name="get_roles_of_user", response_model=List[RoleOut], status_code=status.HTTP_200_OK, dependencies=[require_permission("assign_role_to_user")])
+async def get_roles_of_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    roles = await UserRoleService.get_all_roles_for_user(db=db, user_id=user_id)
+    if roles is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or no roles assigned"
+        )
+    return roles
