@@ -4,7 +4,7 @@ from datetime import datetime
 
 from app.api.dependencies.database import get_db
 from app.api.dependencies.auth import get_current_user, require_permission
-from app.schemas import GroupCreate, GroupUpdate, GroupOut, AddUserToGroupForGroup, AddRoleToGroupForGroup
+from app.schemas import GroupCreate, GroupUpdate, GroupOut, AddUserToGroupForGroup, AddRoleToGroupForGroup, RoleOut, UserOut
 from app.database.services import GroupService, UserGroupService, GroupRoleService
 
 from app.database.models import User
@@ -135,6 +135,21 @@ async def remove_user_from_group(
         )
     return {"message": "User removed from group successfully"}
 
+# Get /groups/{group_id}/users - Get users of a group
+@router.get("/{group_id}/users", name="get_users_of_group", response_model=list[UserOut], status_code=status.HTTP_200_OK, dependencies=[require_permission("remove_user_from_group")])
+async def get_users_of_group(
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    users = await UserGroupService.get_all_users_for_group(db=db, group_id=group_id)
+    if users is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Group not found or no users assigned"
+        )
+    return users
+
 # POST /groups/{group_id}/assigne_role 
 @router.post("/{group_id}/assigne_role", name="assign_role_to_group", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("remove_user_from_group")])
 async def assign_role_to_group(
@@ -179,6 +194,20 @@ async def remove_role_from_group(
         )
     return {"message": "Role removed from group successfully"}
 
+# GET /groups/{group_id}/roles - Get roles of a group
+@router.get("/{group_id}/roles", name="get_roles_of_group", response_model=list[RoleOut], status_code=status.HTTP_200_OK, dependencies=[require_permission("remove_user_from_group")])
+async def get_roles_of_group(
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user)
+):
+    roles = await GroupRoleService.get_all_roles_for_group(db=db, group_id=group_id)
+    if roles is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Group not found or no roles assigned"
+        )
+    return roles
 
 # 🔸 GET /groups/name/{name} - Get group by name
 @router.get("/name/{name}", response_model=GroupOut, name="get_group_by_name")
