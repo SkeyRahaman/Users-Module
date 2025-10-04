@@ -115,14 +115,14 @@ class Testrole_router:
             )
 
     async def test_assign_role_to_user_success(self, mock_db, mock_current_user):
-        with patch.object(UserRoleService, "assign_user_role", new_callable=AsyncMock, return_value=True):
+        with patch.object(UserRoleService, "assigne_user_role", new_callable=AsyncMock, return_value=True):
             request_data = AddRoleToUserForRole(user_id=1)
             result = await role_router.assign_role_to_user(1, request_data, mock_db, mock_current_user)
             assert result["message"] == "Role assigned to user"
-            UserRoleService.assign_user_role.assert_awaited_once()
+            UserRoleService.assigne_user_role.assert_awaited_once()
 
     async def test_assign_role_to_user_failure(self, mock_db, mock_current_user):
-        with patch.object(UserRoleService, "assign_user_role", new_callable=AsyncMock, return_value=False):
+        with patch.object(UserRoleService, "assigne_user_role", new_callable=AsyncMock, return_value=False):
             request_data = AddRoleToUserForRole(user_id=1)
             with pytest.raises(HTTPException) as excinfo:
                 await role_router.assign_role_to_user(1, request_data, mock_db, mock_current_user)
