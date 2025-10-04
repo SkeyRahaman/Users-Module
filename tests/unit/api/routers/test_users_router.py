@@ -28,7 +28,7 @@ class TestUserRouter:
 
         # Simulate assign_user_role returning True (success)
         with patch.object(UserService, "create_user", new_callable=AsyncMock, return_value=mock_user) as create_user_mock, \
-             patch.object(UserRoleService, "assign_user_role", new_callable=AsyncMock, return_value=True) as assign_role_mock:
+             patch.object(UserRoleService, "assigne_user_role", new_callable=AsyncMock, return_value=True) as assign_role_mock:
             response = await users_router.create_user(test_data, mock_db)
             assert response.username == "newuser"
             assert response.email == "new@example.com"
@@ -311,10 +311,10 @@ class TestUserRouter:
         mockrequest = MagicMock()
         mockrequest.role_id = role_id
 
-        with patch('app.database.services.UserRoleService.assign_user_role', new_callable=AsyncMock) as mock_assign:
+        with patch('app.database.services.UserRoleService.assigne_user_role', new_callable=AsyncMock) as mock_assign:
             mock_assign.return_value = True
 
-            response = await users_router.assign_role_to_user(
+            response = await users_router.assigne_role_to_user(
                 user_id=user_id,
                 request_data=mockrequest,
                 db=mock_db,
@@ -332,11 +332,11 @@ class TestUserRouter:
         mockrequest = MagicMock()
         mockrequest.role_id = role_id
 
-        with patch('app.database.services.UserRoleService.assign_user_role', new_callable=AsyncMock) as mock_assign:
+        with patch('app.database.services.UserRoleService.assigne_user_role', new_callable=AsyncMock) as mock_assign:
             mock_assign.return_value = False
 
             with pytest.raises(HTTPException) as excinfo:
-                await users_router.assign_role_to_user(
+                await users_router.assigne_role_to_user(
                     user_id=user_id,
                     request_data=mockrequest,
                     db=mock_db,

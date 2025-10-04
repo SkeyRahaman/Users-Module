@@ -27,7 +27,7 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
 
     # Assign default role (e.g., role_id=1) to the new user
     # You might want to adjust the role_id based on your roles setup
-    update_result = await UserRoleService.assign_user_role(db, user.id, 1, created_by=user.id)
+    update_result = await UserRoleService.assigne_user_role(db, user.id, 1, created_by=user.id)
     if not update_result:
         log.error("Failed to assign default role to user", user_id=user.id, role_id=1)
         raise HTTPException(
@@ -220,13 +220,13 @@ async def get_groups_of_user(
     return groups
 
 @router.post("/{user_id}/assign_role", status_code=status.HTTP_201_CREATED, dependencies=[require_permission("assign_role_to_user")])
-async def assign_role_to_user(
+async def assigne_role_to_user(
     user_id: int,
     request_data: AddRoleToUserForUser,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    assigned = await UserRoleService.assign_user_role(db=db, user_id=user_id, role_id=request_data.role_id, created_by=current_user.id)
+    assigned = await UserRoleService.assigne_user_role(db=db, user_id=user_id, role_id=request_data.role_id, created_by=current_user.id)
     if not assigned:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
