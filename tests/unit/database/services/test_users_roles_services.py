@@ -24,7 +24,7 @@ class TestUserRoleService:
 
     async def test_assign_creates_new_with_default_validity(self, db_session: AsyncSession, test_user, test_role):
         before = datetime.now(timezone.utc)
-        user_role = await UserRoleService.assign_user_role(db_session, test_user.id, test_role.id)
+        user_role = await UserRoleService.assigne_user_role(db_session, test_user.id, test_role.id)
 
         assert user_role is not None
         assert user_role.user_id == test_user.id
@@ -39,7 +39,7 @@ class TestUserRoleService:
         user, role = test_link_user_role
         new_until = datetime.now(timezone.utc) + timedelta(days=10)
 
-        updated = await UserRoleService.assign_user_role(
+        updated = await UserRoleService.assigne_user_role(
             db_session,
             user.id,
             role.id,
@@ -57,7 +57,7 @@ class TestUserRoleService:
         await UserRoleService.remove_user_role(db_session, user.id, role.id)
         assert await UserRoleService.check_user_role_exists(db_session, user.id, role.id) is False
 
-        restored = await UserRoleService.assign_user_role(db_session, user.id, role.id)
+        restored = await UserRoleService.assigne_user_role(db_session, user.id, role.id)
         assert restored.is_deleted is False
         assert await UserRoleService.check_user_role_exists(db_session, user.id, role.id) is True
 
@@ -103,7 +103,7 @@ class TestUserRoleService:
 
     async def test_getallrolesforuser_returns_roles(self, db_session: AsyncSession, test_user, test_role):
         # Assign the role to user
-        await UserRoleService.assign_user_role(db_session, test_user.id, test_role.id)
+        await UserRoleService.assigne_user_role(db_session, test_user.id, test_role.id)
         roles = await UserRoleService.get_all_roles_for_user(db_session, test_user.id)
         assert roles is not None
         assert any(role.id == test_role.id for role in roles)
@@ -112,7 +112,7 @@ class TestUserRoleService:
         assert roles is None
 
     async def test_getallusersforrole_returns_users(self, db_session: AsyncSession, test_user, test_role):
-        await UserRoleService.assign_user_role(db_session, test_user.id, test_role.id)
+        await UserRoleService.assigne_user_role(db_session, test_user.id, test_role.id)
         users = await UserRoleService.get_all_users_for_role(db_session, test_role.id)
         assert users is not None
         assert any(user.id == test_user.id for user in users)
