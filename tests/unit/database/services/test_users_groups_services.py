@@ -99,3 +99,24 @@ class TestUserGroupService:
 
     async def test_check_user_group_exists_false(self, db_session: AsyncSession, test_user, test_group):
         assert await UserGroupService.check_user_group_exists(db_session, test_user.id, test_group.id) is False
+
+    async def test_get_all_users_for_group_returns_users(self, db_session: "AsyncSession", test_user, test_group):
+        # Assign user to group first
+        await UserGroupService.assign_user_group(db_session, test_user.id, test_group.id)
+        users = await UserGroupService.get_all_users_for_group(db_session, test_group.id)
+        assert users
+        assert any(u.id == test_user.id for u in users)
+
+    async def test_get_all_users_for_group_returns_none_if_group_not_found(self, db_session: "AsyncSession"):
+        result = await UserGroupService.get_all_users_for_group(db_session, group_id=999999)
+        assert result is None
+
+    async def test_get_all_groups_for_user_returns_groups(self, db_session: "AsyncSession", test_user, test_group):
+        await UserGroupService.assign_user_group(db_session, test_user.id, test_group.id)
+        groups = await UserGroupService.get_all_groups_for_user(db_session, test_user.id)
+        assert groups
+        assert any(g.id == test_group.id for g in groups)
+
+    async def test_get_all_groups_for_user_returns_none_if_user_not_found(self, db_session: "AsyncSession"):
+        result = await UserGroupService.get_all_groups_for_user(db_session, user_id=999999)
+        assert result is None

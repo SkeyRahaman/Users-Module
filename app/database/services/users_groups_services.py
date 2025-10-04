@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.config import Config
-from app.database.models import UserGroup
+from app.database.models import UserGroup, Group, User
 
 
 class UserGroupService:
@@ -24,6 +24,12 @@ class UserGroupService:
         If exists but deleted → restore and update validity.
         Defaults validity to now + Config.DEFAULT_USER_GROUP_VALIDITY days if valid_until not passed.
         """
+        # check if user exists
+        result = await db.execute(select(User).where(User.id == user_id, User.is_active == True))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        
         if valid_until is None:
             valid_until = datetime.now(timezone.utc) + timedelta(days=Config.DEFAULT_USER_GROUP_VALIDITY)
         if valid_from is None:
@@ -143,3 +149,41 @@ class UserGroupService:
             )
         )
         return result.scalar_one_or_none() is not None
+    
+    @staticmethod
+    async def get_all_users_for_group(db: AsyncSession, group_id: int) -> list:
+        """Get all users for a group."""
+        #check if group exists
+        result = await db.execute(select(Group).where(Group.id == group_id))
+        group = result.scalar_one_or_none()
+        if not group:
+            return None
+        result = await db.execute(
+            select(User)
+            .join(UserGroup, User.id == UserGroup.user_id)
+            .where(
+                UserGroup.group_id == group_id,
+                UserGroup.is_deleted == False,
+                User.is_active == True
+            )
+        )
+        return result.scalars().all()
+    
+    @staticmethod
+    async def get_all_groups_for_user(db: AsyncSession, user_id: int) -> list:
+        """Get all groups for a user."""
+        #check if user exists
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        result = await db.execute(
+            select(Group)
+            .join(UserGroup, Group.id == UserGroup.group_id)
+            .where(
+                UserGroup.user_id == user_id,
+                UserGroup.is_deleted == False,
+                Group.is_deleted == False
+            )
+        )
+        return result.scalars().all()
