@@ -29,7 +29,11 @@ class UserGroupService:
         user = result.scalar_one_or_none()
         if not user:
             return None
-        
+        #check if group exists
+        result = await db.execute(select(Group).where(Group.id == group_id, Group.is_deleted == False))
+        group = result.scalar_one_or_none()
+        if not group:
+            return None
         if valid_until is None:
             valid_until = datetime.now(timezone.utc) + timedelta(days=Config.DEFAULT_USER_GROUP_VALIDITY)
         if valid_from is None:
