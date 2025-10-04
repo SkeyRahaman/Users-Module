@@ -11,7 +11,7 @@ class UserRoleService:
     """Service layer for managing User ↔ Role relationships."""
 
     @staticmethod
-    async def assign_user_role(
+    async def assigne_user_role(
         db: AsyncSession,
         user_id: int,
         role_id: int,
@@ -25,6 +25,16 @@ class UserRoleService:
         If exists but deleted → restore and update validity.
         If no valid_until provided → defaults to now + Config.DEFAULT_USER_ROLE_VALIDITY days.
         """
+        #check if user exists and role exists
+        user_result = await db.execute(select(User).where(User.id == user_id, User.is_active == True))
+        user = user_result.scalar_one_or_none()
+        if not user:
+            return None
+        role_result = await db.execute(select(Role).where(Role.id == role_id, Role.is_deleted == False))
+        role = role_result.scalar_one_or_none()
+        if not role:
+            return None
+        
         if valid_until is None:
             valid_until = datetime.now(timezone.utc) + timedelta(days=Config.DEFAULT_USER_ROLE_VALIDITY)
         if valid_from is None:
