@@ -15,7 +15,7 @@ from app.auth.password_hash import PasswordHasher
 from app.main import app
 from app.api.dependencies.database import get_db
 from app.config import Config
-from app.database.models import RolePermission, UserRole, GroupRole
+from app.database.models import RolePermission, UserRole, GroupRole, UserGroup
 
 # ------------------ DB Session Fixture ------------------
 async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
@@ -92,7 +92,7 @@ async def test_group(db_session: AsyncSession):
     group.is_deleted = True
     await db_session.commit()
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def test_role(db_session: AsyncSession):
     role = Role(
         name = f"Test Role {os.urandom(4).hex()}"
@@ -104,7 +104,7 @@ async def test_role(db_session: AsyncSession):
     role.is_deleted = True
     await db_session.commit()
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def test_permission(db_session: AsyncSession):
     permission = Permission(
         name = f"test_permission_{os.urandom(4).hex()}",
@@ -157,6 +157,22 @@ async def test_group_role(db_session: AsyncSession, test_group: Group, test_role
     yield test_group, test_role
     await db_session.delete(group_role)
     await db_session.commit()
+
+@pytest_asyncio.fixture
+async def test_user_group(db_session: AsyncSession, test_user: User, test_group: Group):
+    user_group = UserGroup(
+        user_id = test_user.id,
+        group_id = test_group.id,
+        created_by = 1
+    )
+    db_session.add(user_group)
+    await db_session.commit()
+    await db_session.refresh(user_group)
+    yield test_user, test_group
+    await db_session.delete(user_group)
+    await db_session.commit()
+
+
 
 @pytest_asyncio.fixture
 async def admin_user(db_session: AsyncSession):
