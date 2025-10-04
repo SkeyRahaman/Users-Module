@@ -261,18 +261,20 @@ class TestUsersRouter:
             json={"group_id": test_group.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        remove_url = app.url_path_for("remove_user_from_group", user_id=test_user.id, group_id=test_group.id)
+        remove_url = app.url_path_for("remove_user_from_group", user_id=test_user.id)
         resp = await client.post(
             remove_url,
+            params={"group_id": test_group.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert resp.status_code == status.HTTP_202_ACCEPTED
         assert "User removed from group successfully" in resp.json()["message"]
 
     async def test_remove_user_from_group_fail(self, client, admin_token, test_user):
-        url = app.url_path_for("remove_user_from_group", user_id=test_user.id, group_id=999999)
+        url = app.url_path_for("remove_user_from_group", user_id=test_user.id)
         resp = await client.post(
             url, 
+            params={"group_id": 999999},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -302,11 +304,11 @@ class TestUsersRouter:
         )
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_assign_role_to_user(self, client, admin_token, test_user, testrole):
+    async def test_assign_role_to_user(self, client, admin_token, test_user, test_role):
         url = app.url_path_for("assigne_role_to_user", user_id=test_user.id)
         resp = await client.post(
             url,
-            json={"role_id": testrole.id},
+            json={"role_id": test_role.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert resp.status_code == status.HTTP_201_CREATED
@@ -321,36 +323,38 @@ class TestUsersRouter:
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_remove_role_from_user(self, client, admin_token, test_user, testrole):
+    async def test_remove_role_from_user(self, client, admin_token, test_user, test_role):
         # Assign role first
         assign_url = app.url_path_for("assigne_role_to_user", user_id=test_user.id)
         await client.post(
             assign_url,
-            json={"role_id": testrole.id},
+            json={"role_id": test_role.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        url = app.url_path_for("remove_role_from_user", user_id=test_user.id, role_id=testrole.id)
+        url = app.url_path_for("remove_role_from_user", user_id=test_user.id)
         resp = await client.post(
             url,
+            params={"role_id": test_role.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert resp.status_code == status.HTTP_202_ACCEPTED
         assert "Role removed from user successfully" in resp.json()["message"]
 
     async def test_remove_role_from_user_fail(self, client, admin_token, test_user):
-        url = app.url_path_for("remove_role_from_user", user_id=test_user.id, role_id=999999)
+        url = app.url_path_for("remove_role_from_user", user_id=test_user.id)
         resp = await client.post(
             url,
+            params={"role_id": 999999},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_get_roles_of_user(self, client, admin_token, test_user, testrole):
+    async def test_get_roles_of_user(self, client, admin_token, test_user, test_role):
         # Assign role first
         assign_url = app.url_path_for("assigne_role_to_user", user_id=test_user.id)
         await client.post(
             assign_url,
-            json={"role_id": testrole.id},
+            json={"role_id": test_role.id},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         url = app.url_path_for("get_roles_of_user", user_id=test_user.id)
@@ -360,7 +364,7 @@ class TestUsersRouter:
         )
         assert resp.status_code == status.HTTP_200_OK
         roles = resp.json()
-        assert any(r["id"] == testrole.id for r in roles)
+        assert any(r["id"] == test_role.id for r in roles)
 
     async def test_get_roles_of_user_notfound(self, client, admin_token):
         url = app.url_path_for("get_roles_of_user", user_id=999999)
