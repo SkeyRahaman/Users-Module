@@ -258,6 +258,40 @@ def upgrade() -> None:
             {"user_id": 2, "role_id": 3, "created_at": now, "updated_at": now, "created_by": 1, "is_deleted": False, "valid_from": None, "valid_until": None},  # Regular user with User role
         ],
     )
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        op.execute(
+            """
+            DO $$
+            DECLARE
+              rec RECORD;
+            BEGIN
+              FOR rec IN
+                SELECT seq_ns.nspname AS seq_schema,
+                       seq.relname    AS seq_name,
+                       tab_ns.nspname AS table_schema,
+                       tab.relname    AS table_name,
+                       att.attname    AS column_name
+                FROM pg_class seq
+                JOIN pg_namespace seq_ns ON seq_ns.oid = seq.relnamespace
+                JOIN pg_depend dep ON dep.objid = seq.oid AND dep.deptype = 'a'
+                JOIN pg_class tab ON tab.oid = dep.refobjid
+                JOIN pg_namespace tab_ns ON tab_ns.oid = tab.relnamespace
+                JOIN pg_attribute att ON att.attrelid = tab.oid AND att.attnum = dep.refobjsubid
+                WHERE seq.relkind = 'S'
+              LOOP
+                EXECUTE format(
+                  'SELECT setval(%L, COALESCE((SELECT MAX(%I) FROM %I.%I), 0), true)',
+                  format('%I.%I', rec.seq_schema, rec.seq_name),
+                  rec.column_name,
+                  rec.table_schema,
+                  rec.table_name
+                );
+              END LOOP;
+            END
+            $$;
+            """
+        )
 
 
 def downgrade() -> None:
