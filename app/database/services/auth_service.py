@@ -18,7 +18,8 @@ class AuthService:
 
         Returns a dictionary containing the new access token, refresh token, token type, and username.
         """
-        access_token = create_access_token(data={"sub": user.username})
+        roles = [role.role.name for role in user.user_roles[:5]]
+        access_token = create_access_token(data={"sub": user.username, "roles": roles})
 
         refresh_token = create_refresh_token(data={"sub": user.username})
 
