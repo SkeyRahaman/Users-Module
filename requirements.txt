@@ -9,3 +9,5 @@ python-multipart
 alembic
 structlog
 aiosqlite
+asyncpg
+psycopg2-binary
