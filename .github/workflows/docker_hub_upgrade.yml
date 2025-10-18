@@ -20,7 +20,7 @@ jobs:
       - name: Build Docker image
         run: |
           # Use the GitHub run number as a simple incrementing tag
-          IMAGE_TAG=sakibmondal7/users_module:${{ github.run_number }}
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
           docker build . --file Dockerfile --tag $IMAGE_TAG
 
       - name: Push Docker image
