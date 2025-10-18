@@ -25,11 +25,11 @@ jobs:
 
       - name: Push Docker image
         run: |
-          IMAGE_TAG=sakibmondal7/users_module:${{ github.run_number }}
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
           docker push $IMAGE_TAG
 
       - name: Tag image as latest and push
         run: |
-          IMAGE_TAG=sakibmondal7/users_module:${{ github.run_number }}
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
           docker tag $IMAGE_TAG sakibmondal7/users_module:latest
           docker push sakibmondal7/users_module:latest
