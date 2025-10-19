@@ -11,3 +11,4 @@ structlog
 aiosqlite
 asyncpg
 psycopg2-binary
+pytest-structlog

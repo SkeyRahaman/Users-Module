@@ -6,20 +6,32 @@ import uuid
 from app.utils.logger import log
 
 
-# Middleware for correlation ID
 class LogCorrelationIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        correlation_id = str(uuid.uuid4())
+        incoming_id = request.headers.get("X-Correlation-ID")
+        correlation_id = incoming_id or str(uuid.uuid4())
+
         structlog.contextvars.bind_contextvars(
             correlation_id=correlation_id,
-            path=request.url.path
+            path=request.url.path,
+            method=request.method
         )
+
         log.info("request_received")
+
         try:
             response = await call_next(request)
-        except Exception as exc:
+        except Exception:
             log.error("unhandled_exception", exc_info=True)
+            from starlette.responses import JSONResponse
+            response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
+            response.headers["X-Correlation-ID"] = correlation_id
             raise
-        log.info("request_completed", status_code=response.status_code)
-        structlog.contextvars.clear_contextvars()
+        finally:
+            if 'response' in locals():
+                response.headers["X-Correlation-ID"] = correlation_id
+                log.info("request_completed", status_code=response.status_code)
+            structlog.contextvars.clear_contextvars()
+
+        response.headers["X-Correlation-ID"] = correlation_id
         return response
