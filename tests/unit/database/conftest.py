@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 import hashlib
 from datetime import datetime, timedelta
 
-from app.config import Config
+from tests.config import TestConfig
 from app.database.models import (
     Base, User, Role, Permission, Group,
     UserRole, UserGroup, GroupRole, RolePermission, PasswordResetToken, RefreshToken
@@ -17,7 +17,7 @@ from app.database.models import (
 from app.auth.jwt import JWTManager
 import os
 
-async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
+async_engine = create_async_engine(TestConfig.TEST_DATABASE_URL, echo=False)
 AsyncTestingSessionLocal = sessionmaker(
     bind=async_engine, class_=AsyncSession, expire_on_commit=False
 )
@@ -30,7 +30,7 @@ async def run_migrations_on_connection(async_engine: AsyncEngine, revision):
 
 @pytest_asyncio.fixture(scope="module")
 async def setup_database():
-    os.environ["DATABASE_URL_ALEMBIC"] = Config.TEST_DATABASE_URL_ALEMBIC
+    os.environ["DATABASE_URL_ALEMBIC"] = TestConfig.TEST_DATABASE_URL_ALEMBIC
     await run_migrations_on_connection(async_engine, "head")
     yield
     async with async_engine.begin() as conn:

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import status
 from httpx import AsyncClient
-from app.config import Config
+from tests.config import TestConfig
 from app.main import app
 from app.database.models import User
 from app.database.services.password_reset_token_service import PasswordResetTokenService
@@ -17,7 +17,7 @@ class TestAuthRouter:
     async def test_get_token_success(self, client: AsyncClient, test_user: User):
         response = await client.post(
             app.url_path_for("token"),
-            data={"username": test_user.username, "password": Config.TEST_USER["password"]},
+            data={"username": test_user.username, "password": TestConfig.TEST_USER["password"]},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         assert response.status_code == status.HTTP_200_OK
@@ -42,7 +42,7 @@ class TestAuthRouter:
 
         response = await client.post(
             app.url_path_for("token"),
-            data={"username": test_user.username, "password": Config.TEST_USER["password"]},
+            data={"username": test_user.username, "password": TestConfig.TEST_USER["password"]},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -101,7 +101,7 @@ class TestAuthRouter:
         # Obtain refresh token with login or set valid token in DB directly for tests
         login_response = await client.post(
             app.url_path_for("token"),
-            data={"username": test_user.username, "password": Config.TEST_USER["password"]},
+            data={"username": test_user.username, "password": TestConfig.TEST_USER["password"]},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         await asyncio.sleep(1)
@@ -117,7 +117,7 @@ class TestAuthRouter:
         await asyncio.sleep(1)
         login_response = await client.post(
             app.url_path_for("token"),
-            data={"username": test_user.username, "password": Config.TEST_USER["password"]},
+            data={"username": test_user.username, "password": TestConfig.TEST_USER["password"]},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         print(login_response.json())
@@ -136,7 +136,7 @@ class TestAuthRouter:
         await asyncio.sleep(1)
         login_response = await client.post(
             app.url_path_for("token"),
-            data={"username": test_user.username, "password": Config.TEST_USER["password"]},
+            data={"username": test_user.username, "password": TestConfig.TEST_USER["password"]},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         access_token = login_response.json().get("access_token")

@@ -7,7 +7,7 @@ from unittest.mock import patch, AsyncMock
 
 from app.main import app
 from app.database.models import User
-from app.config import Config
+from tests.config import TestConfig
 from app.auth.password_hash import PasswordHasher
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ class TestUsersRouter:
                 "lastname":"TestLast_" + uuid.uuid4().hex[:6],
                 "username":"user_" + uuid.uuid4().hex[:8],
                 "email":f"user_{uuid.uuid4().hex[:8]}@example.com",
-                "password": PasswordHasher.get_password_hash(Config.TEST_USER['password']),
+                "password": PasswordHasher.get_password_hash(TestConfig.TEST_USER['password']),
             }
         )
         assert response.status_code == status.HTTP_201_CREATED

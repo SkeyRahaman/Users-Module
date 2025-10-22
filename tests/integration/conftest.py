@@ -14,11 +14,11 @@ from app.auth.jwt import JWTManager
 from app.auth.password_hash import PasswordHasher
 from app.main import app
 from app.api.dependencies.database import get_db
-from app.config import Config
+from tests.config import TestConfig
 from app.database.models import RolePermission, UserRole, GroupRole, UserGroup
 
 # ------------------ DB Session Fixture ------------------
-async_engine = create_async_engine(Config.TEST_DATABASE_URL, echo=False)
+async_engine = create_async_engine(TestConfig.TEST_DATABASE_URL, echo=False)
 AsyncTestingSessionLocal = sessionmaker(
     bind=async_engine, class_=AsyncSession, expire_on_commit=False
 )
@@ -31,7 +31,7 @@ async def run_migrations_on_connection(async_engine: AsyncEngine, revision):
 
 @pytest_asyncio.fixture(scope="module")
 async def setup_database():
-    os.environ["DATABASE_URL_ALEMBIC"] = Config.TEST_DATABASE_URL_ALEMBIC
+    os.environ["DATABASE_URL_ALEMBIC"] = TestConfig.TEST_DATABASE_URL_ALEMBIC
     await run_migrations_on_connection(async_engine, "head")
     yield
     async with async_engine.begin() as conn:
@@ -57,11 +57,11 @@ async def override_get_db(db_session):
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession):
     user = User(
-        firstname=Config.TEST_USER["firstname"],
-        lastname=Config.TEST_USER["lastname"],
-        username=f"{os.urandom(4).hex()}{Config.TEST_USER['username']}",
-        email=f"{os.urandom(4).hex()}{Config.TEST_USER['email']}",
-        password=PasswordHasher.get_password_hash(Config.TEST_USER['password']),
+        firstname=TestConfig.TEST_USER["firstname"],
+        lastname=TestConfig.TEST_USER["lastname"],
+        username=f"{os.urandom(4).hex()}{TestConfig.TEST_USER['username']}",
+        email=f"{os.urandom(4).hex()}{TestConfig.TEST_USER['email']}",
+        password=PasswordHasher.get_password_hash(TestConfig.TEST_USER['password']),
     )
     db_session.add(user)
     await db_session.commit()
@@ -177,7 +177,7 @@ async def test_user_group(db_session: AsyncSession, test_user: User, test_group:
 @pytest_asyncio.fixture
 async def admin_user(db_session: AsyncSession):
     user = await db_session.execute(
-        select(User).where(User.username == Config.ADMIN_USER['username'])
+        select(User).where(User.username == TestConfig.ADMIN_USER['username'])
     )
     admin_user = user.scalars().first()
     if admin_user is None:
@@ -186,4 +186,4 @@ async def admin_user(db_session: AsyncSession):
 
 @pytest_asyncio.fixture
 async def admin_token():
-    return JWTManager.encode_access_token(data={"sub": Config.ADMIN_USER['username']})
+    return JWTManager.encode_access_token(data={"sub": TestConfig.ADMIN_USER['username']})
