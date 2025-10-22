@@ -1,11 +1,29 @@
 import os
 
 class Config:
-    DEFAULT_DATABASE_NAME = "mydatabase.db"
-    URL_PREFIX = os.getenv("URL_PREFIX","")
+    #Application Configuration
+    APPLICATION_NAME = os.getenv("APPLICATION_NAME","Users_Module")
     VERSION = os.getenv("VERSION","V1")
-    DATABASE_URL = os.getenv("DATABASE_URL",f"sqlite+aiosqlite:///./{DEFAULT_DATABASE_NAME}")
-    DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{DEFAULT_DATABASE_NAME}")
+    URL_PREFIX = os.getenv("URL_PREFIX","")
+    DEFAULT_USER_ROLE_VALIDITY = 30
+    DEFAULT_USER_GROUP_VALIDITY = 30
+    DEFAULT_GROUP_ROLE_VALIDITY = 30
+
+    # Database Configuration
+    DATABASE_DRIVER = os.getenv("DATABASE_DRIVER","sqlite+aiosqlite")
+    DATABASE_DRIVER_SYNC = os.getenv("DATABASE_DRIVER_SYNC","sqlite")
+    DATABASE_USERNAME = os.getenv("DATABASE_USERNAME","user")
+    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD","password")
+    DATABASE_HOST = os.getenv("DATABASE_HOST","localhost")
+    DATABASE_PORT = os.getenv("DATABASE_PORT","5432")
+    if DATABASE_DRIVER.startswith("sqlite"):
+        DATABASE_URL = os.getenv("DATABASE_URL",f"sqlite+aiosqlite:///./{APPLICATION_NAME}.db")
+        DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{APPLICATION_NAME}.db")
+    else:
+        DATABASE_URL = os.getenv("DATABASE_URL",f"{DATABASE_DRIVER}://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{APPLICATION_NAME}")
+        DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"{DATABASE_DRIVER_SYNC}://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{APPLICATION_NAME}")
+    
+    #TOKEN Configuration
     ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",30)
     REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS",30)
     SECRET_KEY = os.getenv("SECRET_KEY","Some random secret key")
@@ -14,10 +32,10 @@ class Config:
 
     # Logging Configuration
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-    LOG_FILENAME = os.getenv("LOG_FILENAME", "users_module.log")
+    LOG_FILENAME = os.getenv("LOG_FILENAME", f"{APPLICATION_NAME}.log")
     LOG_FOLDERNAME = os.getenv("LOG_FOLDERNAME", "logs")
     LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", 5_000_000))
-    LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", 1))
+    LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", 2))
 
     # Add Admin user default info
     ADMIN_USER = {
@@ -43,22 +61,4 @@ class Config:
         "is_verified": True,
         "is_active": True,
         "is_deleted": False,
-    }
-
-
-
-
-
-    DEFAULT_USER_ROLE_VALIDITY = 30
-    DEFAULT_USER_GROUP_VALIDITY = 30
-    DEFAULT_GROUP_ROLE_VALIDITY = 30
-
-    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL",f"sqlite+aiosqlite:///./TEST-{DEFAULT_DATABASE_NAME}")
-    TEST_DATABASE_URL_ALEMBIC = os.getenv("TEST_DATABASE_URL_ALEMBIC",f"sqlite:///./TEST-{DEFAULT_DATABASE_NAME}")
-    TEST_USER = {
-        "firstname": "test_firstname",
-        "lastname": "test_lastname",
-        "username": "test_username",
-        "email": "test1@email.com",
-        "password": "password1",
     }
