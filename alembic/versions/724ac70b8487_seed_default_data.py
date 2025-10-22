@@ -258,6 +258,8 @@ def upgrade() -> None:
             {"user_id": 2, "role_id": 3, "created_at": now, "updated_at": now, "created_by": 1, "is_deleted": False, "valid_from": None, "valid_until": None},  # Regular user with User role
         ],
     )
+
+    # 9. Adjust sequences for PostgreSQL
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
