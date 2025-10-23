@@ -9,13 +9,13 @@ from sqlalchemy.exc import OperationalError, DBAPIError
 APPLICATION_NAME = os.getenv("APPLICATION_NAME","Users_Module")
 # Database Configuration
 DATABASE_DRIVER_SYNC = os.getenv("DATABASE_DRIVER_SYNC","sqlite")
+DATABASE_USERNAME = os.getenv("DATABASE_USERNAME","user")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD","password")
+DATABASE_HOST = os.getenv("DATABASE_HOST","localhost")
+DATABASE_PORT = os.getenv("DATABASE_PORT","5432")
 if DATABASE_DRIVER_SYNC.startswith("sqlite"):
     DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"sqlite:///./{APPLICATION_NAME}.db")
 else:
-    DATABASE_USERNAME = os.getenv("DATABASE_USERNAME","user")
-    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD","password")
-    DATABASE_HOST = os.getenv("DATABASE_HOST","localhost")
-    DATABASE_PORT = os.getenv("DATABASE_PORT","5432")
     DATABASE_URL_ALEMBIC = os.getenv("DATABASE_URL_ALEMBIC",f"{DATABASE_DRIVER_SYNC}://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{APPLICATION_NAME}")
 
 RETRIES = int(os.environ.get("DB_WAIT_RETRIES", "60"))
