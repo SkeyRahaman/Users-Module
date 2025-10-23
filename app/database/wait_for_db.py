@@ -27,7 +27,7 @@ if not DATABASE_URL_ALEMBIC:
     sys.exit(1)
 
 def wait_for_db(url: str, retries: int = RETRIES, delay: float = DELAY) -> None:
-    print(f"Waiting for DB with URL: {url}")
+    print(f"Waiting for DB from host - '{DATABASE_HOST}' at port - '{DATABASE_PORT}'...")
     engine = create_engine(url)
     for attempt in range(1, retries + 1):
         try:
