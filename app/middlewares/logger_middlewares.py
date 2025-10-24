@@ -9,6 +9,8 @@ from app.utils.logger import log
 class LogCorrelationIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         incoming_id = request.headers.get("X-Correlation-ID")
+        if not incoming_id:
+            log.debug("No incoming correlation ID found; generating a new one.")
         correlation_id = incoming_id or str(uuid.uuid4())
 
         structlog.contextvars.bind_contextvars(
