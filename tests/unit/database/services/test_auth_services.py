@@ -41,8 +41,8 @@ class TestAuthService:
                 "token_type": "bearer",
                 "user_name": "alice"
             }
-            mock_create_access_token.assert_called_once_with(data={"sub": "alice"})
-            mock_create_refresh_token.assert_called_once_with(data={"sub": "alice"})
+            mock_create_access_token.assert_called_once_with(data={'sub': 'alice', 'user_id': 123})
+            mock_create_refresh_token.assert_called_once_with(data={'sub': 'alice', 'user_id': 123})
             mock_add_refresh_token.assert_awaited_once_with(
                 db=mock_db,
                 raw_token=example_refresh_token,
