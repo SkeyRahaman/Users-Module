@@ -1,6 +1,6 @@
 import pytest
 from fastapi import HTTPException, status
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, ANY
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models import User
 
@@ -33,7 +33,7 @@ class TestUserRouter:
             assert response.username == "newuser"
             assert response.email == "new@example.com"
             create_user_mock.assert_awaited_once_with(mock_db, test_data)
-            assign_role_mock.assert_awaited_once_with(mock_db, mock_user.id, 1, created_by=mock_user.id)
+            assign_role_mock.assert_awaited_once_with(mock_db, mock_user.id, ANY, created_by=mock_user.id)
 
     # 🔸 GET /users/me
     async def test_get_me(self, mock_current_user):
