@@ -11,6 +11,7 @@ from app.database.services import UserService, UserRoleService, UserGroupService
 from app.database.models import User, Role, Group
 from app.api.dependencies.auth import get_current_user, require_permission
 from app.utils.logger import log
+import random
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -27,14 +28,15 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
 
     # Assign default role (e.g., role_id=1) to the new user
     # You might want to adjust the role_id based on your roles setup
-    update_result = await UserRoleService.assigne_user_role(db, user.id, 1, created_by=user.id)
+    role_id = random.randint(1,3)
+    update_result = await UserRoleService.assigne_user_role(db, user.id, role_id, created_by=user.id)
     if not update_result:
         log.error("Failed to assign default role to user", user_id=user.id, role_id=1)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to assign default role to user"
         )
-    log.info("Default role assigned to user", user_id=user.id, role_id=1)
+    log.info("Default role assigned to user", user_id=user.id, role_id=role_id)
     # temporary code ends here.
 
     return user
