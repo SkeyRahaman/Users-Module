@@ -333,7 +333,7 @@
 
   /* Hide user name/role text in topbar on all mobile screens — show avatar only */
   .user-menu-info-hidden-mobile {
-    display: none;
+    display: none !important;
   }
 }
 
