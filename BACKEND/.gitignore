@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# FastAPI - Uvicorn logs
+*.log
+
+# VSCode settings
+.vscode/
+
+# macOS files
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*.so
+*.dylib
+*.dll
+*.pyd
+
+# Test database (SQLite, if used)
+*.db
+*.sqlite3
+
+# dotenv environment variables
+.env
+.env.*
+
+# mypy, pylint, coverage reports, pytest cache
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.cache/
+.tox/
+nosetests.xml
+test-results/
+
+# PyInstaller
+# Usually these files are written by a python script from a template
+*.manifest
+*.spec
+
+# pipenv, poetry
+Pipfile.lock
+poetry.lock
+
+# pyre
+.pyre/
+
+# local development stuff
+instance/
+local_settings.py
+
+# Jupyter Notebooks (if any)
+.ipynb_checkpoints/
+
+# __init__.py cache
+*.egg-info/
+dist/
+build/
+
+#ignore log files
+*.log
+logs/
+logs-TEST/

@@ -1,0 +1,358 @@
+/* Layout Grid, Sidebar, Topbar */
+
+.app-container {
+  display: grid;
+  grid-template-areas:
+    "sidebar topbar"
+    "sidebar content";
+  grid-template-columns: var(--sidebar-width, 260px) 1fr;
+  grid-template-rows: 70px 1fr;
+  min-height: 100vh;
+  transition: grid-template-columns var(--transition-normal);
+}
+
+.app-container.sidebar-collapsed {
+  --sidebar-width: 80px;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  grid-area: sidebar;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: width var(--transition-normal), transform var(--transition-normal);
+  overflow-x: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.sidebar-header {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: var(--font-bold);
+  background: linear-gradient(135deg, var(--accent), var(--info));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+
+.sidebar-collapse-btn {
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-collapse-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.sidebar-nav-item:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+.sidebar-nav-item.active {
+  color: var(--text-primary);
+  background: linear-gradient(90deg, var(--bg-tertiary) 0%, var(--bg-hover) 100%);
+  border-left: 3px solid var(--accent);
+}
+
+.sidebar-nav-item svg {
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed .logo-text {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-nav-item span {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar-collapsed .sidebar-collapse-btn {
+  transform: rotate(180deg);
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Mobile close/desktop toggle button visibility */
+.sidebar-mobile-close { display: none; }
+.sidebar-desktop-toggle { display: flex; }
+
+/* Topbar Styling */
+.topbar {
+  grid-area: topbar;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Hamburger button — hidden on desktop */
+.topbar-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.topbar-hamburger:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.api-health-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+}
+
+.health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.health-dot.healthy {
+  background-color: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse 2s infinite;
+}
+
+.health-dot.unhealthy {
+  background-color: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+  animation: pulse 2s infinite;
+}
+
+/* Main Content Wrapper */
+.main-content {
+  grid-area: content;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: var(--bg-primary);
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Page Header component layout */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: var(--font-bold);
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.page-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Grid helper systems */
+.grid-cols-1 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+.grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.grid-cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ========== MOBILE (≤768px) ========== */
+@media (max-width: 768px) {
+  .app-container {
+    grid-template-areas:
+      "topbar"
+      "content";
+    grid-template-columns: 1fr;
+    grid-template-rows: 70px 1fr;
+  }
+
+  /* Sidebar becomes a fixed slide-in drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    transform: translateX(-100%);
+    z-index: 300;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Show mobile close ×, hide desktop toggle */
+  .sidebar-mobile-close { display: flex; }
+  .sidebar-desktop-toggle { display: none; }
+
+  /* Semi-transparent backdrop */
+  .sidebar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 299;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Show hamburger */
+  .topbar-hamburger {
+    display: flex;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+    gap: 0.75rem;
+  }
+
+  .topbar-left { gap: 0.75rem; }
+  .topbar-right { gap: 0.75rem; }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.4rem;
+  }
+
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide user name/role text in topbar on all mobile screens — show avatar only */
+  .user-menu-info-hidden-mobile {
+    display: none;
+  }
+}
+
+/* ========== SMALL MOBILE (≤480px) ========== */
+@media (max-width: 480px) {
+  /* Show only the pulsing dot, hide "API: Healthy" text */
+  .health-badge-text {
+    display: none;
+  }
+
+  .api-health-badge {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .main-content {
+    padding: 0.875rem;
+  }
+}

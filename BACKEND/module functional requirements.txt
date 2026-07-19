@@ -1,0 +1,108 @@
+1. CRUD account
+2. login and logout. JWT Oauth2
+3. have roles.
+4. have groups
+
+
+Endpoints. 
+
+Auth.
+POST   /auth/login
+POST   /auth/logout
+GET    /auth/verify-token
+OPTIONAL -> can we integrate third party login or SSH?
+POST /auth/forgot-password
+POST /auth/reset-password
+
+Users
+POST   /users/
+GET    /users/me
+PUT    /users/me
+DELETE /users/me
+GET    /users/{id}   for admins
+
+ROLES
+POST   /roles/
+GET    /roles/
+GET    /roles/{id}
+PUT    /roles/{id}
+DELETE /roles/{id}
+POST   /roles/{role_id}/assign-to-group/{group_id}
+POST   /roles/{role_id}/remove-from-group/{group_id}
+
+GROUPS
+POST   /groups/
+GET    /groups/
+GET    /groups/{id}
+PUT    /groups/{id}
+DELETE /groups/{id}
+POST   /groups/{group_id}/add-user/{user_id}
+POST   /groups/{group_id}/remove-user/{user_id}
+
+
+Database models
+
+Users
+- id
+- firstname
+- middle name
+- lastname
+- username
+- email
+- password
+- roles[list]
+- groups[list]
+- is_active
+- is_verified
+- is_deleted
+- created
+- updated
+
+permissions
+- id
+- name
+- description
+- created
+- updated
+- deleted
+
+Roles
+- id
+- name
+- description
+- created
+- updated
+- deleted
+
+Groups
+- id
+- name
+- description
+- created
+- updated
+- deleted
+
+Relations
+- user to roles
+- user to groups
+- roles to permissions
+- groups to roles
+
+
+
+points--
+Security 
+- password hash
+- JWT
+- oauth2 flows
+- token backlist
+- rateliiting
+- CSRF (optional)
+- email or phone verification
+
+Observability and Monitoring (📈)
+- Logging	✅	loguru or structlog
+- Error reporting	✅	Sentry / Rollbar
+- Tracing	Optional	OpenTelemetry
+- Health checks	✅	/health or /status endpoint
+- Metrics	Optional	Prometheus + Grafana

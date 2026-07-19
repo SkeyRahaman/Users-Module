@@ -1,0 +1,465 @@
+/* Page-specific styles */
+
+/* ---- User Profile Header ---- */
+.profile-header {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* ---- Profile Page Root ---- */
+.profile-page-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ---- Profile Hero Card ---- */
+.profile-hero-card {
+  padding: 1.5rem 2rem;
+}
+
+.profile-hero-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.profile-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero-name {
+  font-size: 1.35rem;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.profile-hero-username {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.profile-hero-email {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.profile-hero-actions {
+  flex-shrink: 0;
+}
+
+.profile-signout-btn {
+  white-space: nowrap;
+}
+
+/* ---- Profile 2-column layout ---- */
+.profile-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.profile-form-card {
+  /* inherits .card */
+}
+
+.profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-form-submit {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: var(--font-bold);
+  margin-bottom: 0.25rem;
+}
+
+.profile-username {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.profile-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.profile-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ---- Detail Tab Content ---- */
+.detail-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.detail-content .tabs-header {
+  padding: 0 1.75rem;
+  margin-bottom: 0;
+  background: var(--bg-tertiary);
+}
+
+.detail-tab-body {
+  padding: 1.75rem;
+}
+
+/* ---- Assignment Panel ---- */
+.assignment-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.assignment-panel-title {
+  font-size: 0.95rem;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.assignment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+  gap: 1rem;
+}
+
+.assignment-item:hover {
+  border-color: var(--bg-hover);
+}
+
+.assignment-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.assignment-item-name {
+  font-size: 0.9rem;
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.assignment-item-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Timeline (Activity Log) ---- */
+.timeline-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 0 0 1.5rem;
+  position: relative;
+  animation: timelineEntry 0.3s ease-out both;
+}
+
+.timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-icon.login    { background: var(--info-glow);    border-color: var(--info);    color: var(--info); }
+.timeline-icon.create   { background: var(--success-glow); border-color: var(--success); color: var(--success); }
+.timeline-icon.update   { background: var(--warning-glow); border-color: var(--warning); color: var(--warning); }
+.timeline-icon.delete   { background: var(--danger-glow);  border-color: var(--danger);  color: var(--danger); }
+.timeline-icon.assign   { background: var(--accent-glow);  border-color: var(--accent);  color: var(--accent); }
+
+.timeline-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.timeline-action {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  margin-bottom: 0.2rem;
+}
+
+.timeline-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* ---- Info Grid (settings panels) ---- */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.info-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-field-label {
+  font-size: 0.78rem;
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.info-field-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .info-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Danger Zone Card ---- */
+.danger-zone {
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  background: var(--danger-glow);
+}
+
+.danger-zone-title {
+  font-size: 1rem;
+  font-weight: var(--font-semibold);
+  color: var(--danger);
+  margin-bottom: 0.5rem;
+}
+
+.danger-zone-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+}
+
+/* ---- Unauthorized Page ---- */
+.unauthorized-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.unauthorized-code {
+  font-size: 6rem;
+  font-weight: var(--font-bold);
+  background: linear-gradient(135deg, var(--danger), var(--warning));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.unauthorized-title {
+  font-size: 1.5rem;
+  font-weight: var(--font-semibold);
+}
+
+.unauthorized-desc {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 380px;
+}
+
+/* ========== MOBILE PAGE ADJUSTMENTS ========== */
+
+@media (max-width: 768px) {
+  /* Profile layout: stack form above sidebar */
+  .profile-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Profile header: stack avatar + info */
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Profile hero: stack avatar + info + actions */
+  .profile-hero-card {
+    padding: 1.25rem;
+  }
+
+  .profile-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .profile-hero-actions {
+    width: 100%;
+  }
+
+  .profile-signout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Detail tab body: tighter padding */
+  .detail-tab-body {
+    padding: 1.25rem;
+  }
+
+  /* Detail tabs header: tighter */
+  .detail-content .tabs-header {
+    padding: 0 1.25rem;
+  }
+
+  /* Assignment panel: full width actions */
+  .assignment-panel-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* Assignment items: allow wrapping of actions */
+  .assignment-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .assignment-item-meta {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-hero-name {
+    font-size: 1.15rem;
+  }
+
+  /* Save button full-width on tiny screens */
+  .profile-form-submit {
+    justify-content: stretch;
+  }
+
+  .profile-form-submit .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-name {
+    font-size: 1.25rem;
+  }
+
+  .profile-meta {
+    gap: 0.5rem;
+  }
+
+  .danger-zone {
+    padding: 1.25rem;
+  }
+
+  /* Timeline: tighter spacing */
+  .timeline-item {
+    gap: 0.875rem;
+  }
+
+  /* Info grid */
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}

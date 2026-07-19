@@ -1,0 +1,101 @@
+/* Keyframes & Micro-animations */
+
+/* Spin for loading spinners */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Shimmer for skeleton loaders */
+@keyframes shimmer {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+/* Fade-in for overlays */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Scale + fade for modals */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Fade + drop for dropdowns */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide up for page content */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide down for bulk action bar */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pulse for health badge dot */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Shake for error / 403 denial */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+
+/* Count-up flash for stat cards */
+@keyframes countPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Timeline entry stagger */
+@keyframes timelineEntry {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Gradient animated border glow */
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50%       { box-shadow: 0 0 0 4px var(--accent-glow); }
+}
+
+/* Utility animation classes */
+.animate-fade-in   { animation: fadeIn 0.25s ease-out both; }
+.animate-slide-up  { animation: slideUp 0.28s ease-out both; }
+.animate-scale-in  { animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-shake     { animation: shake 0.4s ease-in-out; }
+.animate-spin      { animation: spin 0.8s linear infinite; }
+.animate-pulse     { animation: pulse 2s ease-in-out infinite; }
+
+/* Staggered list items */
+.stagger-item:nth-child(1)  { animation-delay: 0.04s; }
+.stagger-item:nth-child(2)  { animation-delay: 0.08s; }
+.stagger-item:nth-child(3)  { animation-delay: 0.12s; }
+.stagger-item:nth-child(4)  { animation-delay: 0.16s; }
+.stagger-item:nth-child(5)  { animation-delay: 0.20s; }
+.stagger-item:nth-child(6)  { animation-delay: 0.24s; }
+.stagger-item:nth-child(7)  { animation-delay: 0.28s; }
+.stagger-item:nth-child(8)  { animation-delay: 0.32s; }
+.stagger-item:nth-child(9)  { animation-delay: 0.36s; }
+.stagger-item:nth-child(10) { animation-delay: 0.40s; }
+
+/* Transition helpers */
+.transition-all   { transition: all var(--transition-normal); }
+.transition-fast  { transition: all var(--transition-fast); }
+.transition-slow  { transition: all var(--transition-slow); }

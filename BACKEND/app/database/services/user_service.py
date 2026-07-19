@@ -1,0 +1,391 @@
+from sqlalchemy import asc, desc, select, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import selectinload
+import json
+import os
+from datetime import datetime
+
+from app.database.models import User, Role, Group, Permission, RolePermission, UserRole, UserGroup, GroupRole
+from app.schemas.user import UserCreate, UserUpdate
+from app.auth.password_hash import PasswordHasher
+from app.utils.email_service import EmailService
+from app.database.services.password_reset_token_service import PasswordResetTokenService
+from app.config import Config
+
+class UserService:
+
+    @staticmethod
+    async def create_user(db: AsyncSession, user_data: UserCreate) -> User | None:
+        if await UserService.check_username_exists(db, user_data.username):
+            return None
+
+        if await UserService.check_email_exists(db, user_data.email):
+            return None
+
+        hashed_password = PasswordHasher.get_password_hash(user_data.password)
+        user = User(
+            firstname=user_data.firstname,
+            middlename=user_data.middlename,
+            lastname=user_data.lastname,
+            username=user_data.username,
+            email=user_data.email,
+            password=hashed_password,
+        )
+        db.add(user)
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except IntegrityError:
+            await db.rollback()
+            return None
+
+    @staticmethod
+    async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate) -> User | None:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+
+        for field, value in user_data.model_dump(exclude_unset=True).items():
+            if field == "password" and value:
+                setattr(user, field, PasswordHasher.get_password_hash(value))
+            else:
+                setattr(user, field, value)
+
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except IntegrityError:
+            await db.rollback()
+            return None
+
+    @staticmethod
+    async def delete_user(db: AsyncSession, user_id: int) -> bool:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        user.is_deleted = True
+        try:
+            await db.commit()
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+        
+    @staticmethod
+    async def update_user_password(db: AsyncSession, user_id: int, new_password: str) -> bool:
+        """
+        Updates the password for a user.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        user.password = PasswordHasher.get_password_hash(new_password)
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+
+    @staticmethod
+    async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
+        result = await db.execute(
+            select(User).where(User.username == username)
+        )
+        return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+        result = await db.execute(
+            select(User).where(User.email == email)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_all_users(
+        db: AsyncSession,
+        page: int = 1,
+        limit: int = 50,
+        sort_by: str = "created",
+        sort_order: str = "desc",
+        status: bool = True,
+        role: str | None = None,
+        group: str | None = None,
+        search: str | None = None,
+    ) -> tuple[int, list[User]]:
+        allowed_sort_fields = {"id", "username", "email", "status", "created"}
+        if sort_by not in allowed_sort_fields:
+            sort_by = "created"
+        order_expr = desc(getattr(User, sort_by)) if sort_order.lower() == "desc" else asc(getattr(User, sort_by))
+        query = (
+            select(User)
+            .options(
+                selectinload(User.user_roles).selectinload(UserRole.role),
+                selectinload(User.user_groups).selectinload(UserGroup.group)
+            )
+            .where(User.is_deleted == False)
+        )
+        filters = []
+        # Filter by active status (assuming status is "active" or "inactive", map accordingly)
+        if status:
+            filters.append(User.is_active == True)
+        else:
+            filters.append(User.is_active == False)
+        # Filter by Role name:
+        if role:
+            query = query.join(User.user_roles).join(UserRole.role)
+            filters.append(func.lower(Role.name) == role.lower())
+        # Filter by Group name:
+        if group:
+            query = query.join(User.user_groups).join(UserGroup.group)
+            filters.append(func.lower(Group.name) == group.lower())
+        # Search by username or email (case insensitive partial match)
+        if search:
+            search_pattern = f"%{search.lower()}%"
+            filters.append(
+                or_(
+                    func.lower(User.username).like(search_pattern),
+                    func.lower(User.email).like(search_pattern),
+                )
+            )
+        if filters:
+            query = query.where(*filters)
+        # Count total with same filters
+        count_query = select(func.count()).select_from(User).where(User.is_deleted == False)
+        if filters:
+            if role:
+                count_query = count_query.join(User.user_roles).join(UserRole.role)
+            if group:
+                count_query = count_query.join(User.user_groups).join(UserGroup.group)
+            count_query = count_query.where(*filters)
+        total_result = await db.execute(count_query)
+        total = total_result.scalar_one()
+        # Pagination:
+        offset = (page - 1) * limit
+        query = query.order_by(order_expr).offset(offset).limit(limit)
+        result = await db.execute(query)
+        users = result.scalars().unique().all()
+        return total, users
+    
+    @staticmethod
+    async def check_username_exists(db: AsyncSession, username: str) -> bool:
+        result = await db.execute(
+            select(User).where(User.username == username, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def check_email_exists(db: AsyncSession, email: str) -> bool:
+        result = await db.execute(
+            select(User).where(User.email == email, User.is_deleted == False)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def get_all_groups_for_user(db: AsyncSession, user_id: int) -> list[Group]:
+        """
+        Returns all non-deleted groups that the user is directly assigned to.
+        """
+        result = await db.execute(
+            select(Group)
+            .join(UserGroup, UserGroup.group_id == Group.id)
+            .where(
+                UserGroup.user_id == user_id,
+                UserGroup.is_deleted == False,
+                Group.is_deleted == False
+            )
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_all_roles_for_user(db: AsyncSession, user_id: int) -> list[Role]:
+        """
+        Returns all roles for the user:
+        - Direct roles from UserRole
+        - Roles from groups via UserGroup -> GroupRole
+        Removes duplicates.
+        """
+        # Direct roles
+        direct_roles_query = (
+            select(Role)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(
+                UserRole.user_id == user_id,
+                UserRole.is_deleted == False,
+                Role.is_deleted == False
+            )
+        )
+        # Roles via groups
+        group_roles_query = (
+            select(Role)
+            .join(GroupRole, GroupRole.role_id == Role.id)
+            .join(UserGroup, UserGroup.group_id == GroupRole.group_id)
+            .where(
+                UserGroup.user_id == user_id,
+                UserGroup.is_deleted == False,
+                GroupRole.is_deleted == False,
+                Role.is_deleted == False
+            )
+        )
+        # Execute queries
+        direct_roles_result = await db.execute(direct_roles_query)
+        group_roles_result = await db.execute(group_roles_query)
+        # Combine and ensure unique Role IDs
+        all_roles = {role.id: role for role in (direct_roles_result.scalars().all() + group_roles_result.scalars().all())}
+        return list(all_roles.values())
+    
+    @staticmethod
+    async def get_all_permissions_for_user(db: AsyncSession, user_id: int) -> list[Permission]:
+        """
+        Returns all unique permissions for the user based on their roles.
+        """
+        roles = await UserService.get_all_roles_for_user(db, user_id)
+        if not roles:
+            return []
+        role_ids = [role.id for role in roles]
+        result = await db.execute(
+            select(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .where(
+                RolePermission.role_id.in_(role_ids),
+                RolePermission.is_deleted == False,
+                Permission.is_deleted == False,
+            )
+        )
+        return list({permission.id: permission.name for permission in result.scalars().all()}.values())
+        
+    @staticmethod
+    async def activate_user(db: AsyncSession, user_id: int) -> bool:
+        """
+        Activates a user by setting is_active to True.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user or user.is_active:
+            return False
+        user.is_active = True
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+        except SQLAlchemyError:
+            await db.rollback()
+            return False
+
+    @staticmethod
+    async def deactivate_user(db: AsyncSession, user_id: int) -> bool:
+        """
+        Deactivates a user by setting is_active to False.
+        Returns True if successful, False otherwise.
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == False)
+        )
+        user = result.scalar_one_or_none()
+        if not user or not user.is_active:
+            return False
+        user.is_active = False
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return True
+        except IntegrityError:
+            await db.rollback()
+            return False
+        except SQLAlchemyError:
+            await db.rollback()
+            return False
+
+    @staticmethod
+    async def get_users_activity_logs(
+        db: AsyncSession, user_id: int, limit: int = 50, offset: int = 0
+    ) -> list[list[dict],int] | None:
+        """
+        Fetches activity logs for a user.
+        This is a placeholder implementation. Will replace later with actual log fetching logic.
+        """
+        # Placeholder: In a real implementation, fetch logs from a logging table or service.
+        # Here we return a dummy log entry for demonstration.
+        # The current one fetches the logfiles and in log files each line is a json so get the objects and
+        # cheeck if user_id is present in that json object. then checks if the user_id matches if so return
+        # json objects in a list.
+        logs: list[dict] = []
+
+        # Iterate over all files in the log folder
+        for filename in os.listdir(Config.LOG_FOLDERNAME):
+            file_path = os.path.join(Config.LOG_FOLDERNAME, filename)
+
+            # Skip directories, only read files
+            if not os.path.isfile(file_path):
+                continue
+
+            # Read each log file line by line
+            with open(file_path, "r") as log_file:
+                for line in log_file:
+                    try:
+                        log_entry = json.loads(line)
+                        # Collect only entries with matching user_id
+                        if log_entry.get("user_id") == user_id:
+                            logs.append(log_entry)
+                    except json.JSONDecodeError:
+                        # Ignore lines that are not JSON
+                        continue
+
+        if not logs:
+            return None
+
+        # Sort logs by timestamp if present, oldest first
+        logs.sort(
+            key=lambda x: datetime.fromisoformat(x["timestamp"].replace("Z", "+00:00"))
+            if "timestamp" in x else datetime.min, reverse=True
+        )
+        total = len(logs)
+        # Apply pagination slicing
+        paginated_logs = logs[offset : offset + limit]
+        return paginated_logs, total
+    
+    @staticmethod
+    async def reset_user_password(db: AsyncSession, user_id: int) -> str | None:
+        """
+        Resets the user's password to a new random password.
+        Returns the new password if successful, None otherwise.
+        """
+        password_rest_token = await PasswordResetTokenService.create_password_reset_token(db, user_id)
+        if not password_rest_token:
+            return None
+        email_success = await EmailService.send_password_rest_email(
+            to_address=(await UserService.get_user_by_id(db, user_id)).email,
+            subject="Password Reset",
+            body=f"Your password reset token is: {password_rest_token.token_hash}"
+        )
+        return email_success
+    

@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: users_module
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    # Ensure the DB is ready before attempting to run the app
+    depends_on:
+      db:
+        condition: service_healthy 
+    restart: unless-stopped
+    # command: ["./entrypoint.sh"]
+    networks:
+      - backend
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_dev
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - backend
+    # Healthcheck to determine when the DB is ready to accept connections
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    driver: bridge

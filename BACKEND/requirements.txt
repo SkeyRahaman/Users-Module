@@ -1,0 +1,14 @@
+pyjwt
+fastapi
+uvicorn
+sqlalchemy
+pydantic[email]
+passlib
+python-jose
+python-multipart
+alembic
+structlog
+aiosqlite
+asyncpg
+psycopg2-binary
+pytest-structlog
