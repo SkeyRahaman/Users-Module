@@ -20,3 +20,10 @@ async def test_reset_db_success(client):
     assert response.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.asyncio
+async def test_prometheus_metrics_endpoint(client):
+    response = await client.get(f"{Config.URL_PREFIX}/metrics")
+    assert response.status_code == status.HTTP_200_OK
+    assert "http_requests_total" in response.text or "python_info" in response.text
+
+

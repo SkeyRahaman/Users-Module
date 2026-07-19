@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.config import Config
 from app.api.routers import users, auth, permissions, groups, roles, health
 from app.middlewares.logger_middlewares import LogCorrelationIdMiddleware
@@ -27,3 +28,11 @@ app.include_router(users.router)
 app.include_router(groups.router)
 app.include_router(roles.router)
 app.include_router(permissions.router)
+
+# Instrument Prometheus metrics and expose endpoint
+Instrumentator().instrument(app).expose(
+    app,
+    endpoint=f"{Config.URL_PREFIX}/metrics",
+    include_in_schema=True,
+    tags=["Health"]
+)
