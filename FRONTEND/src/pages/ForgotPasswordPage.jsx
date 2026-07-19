@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
             <div className="auth-logo-mark">
               <Settings2 size={28} />
             </div>
-            <span className="auth-logo-text">AuthConsole</span>
+            <span className="auth-logo-text">Users_Module</span>
           </div>
           <h2 className="auth-hero-title">Reset Administrator Password</h2>
           <p className="auth-hero-subtitle">

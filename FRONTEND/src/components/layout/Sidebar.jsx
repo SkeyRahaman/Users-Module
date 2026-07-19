@@ -42,7 +42,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onMobileC
           <div className="auth-logo-mark" style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)' }}>
             <Settings2 size={20} />
           </div>
-          <span className="logo-text">AuthConsole</span>
+          <span className="logo-text">Users_Module</span>
         </div>
         {/* Desktop collapse button */}
         <button
