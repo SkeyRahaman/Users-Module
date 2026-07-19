@@ -68,7 +68,9 @@ async def api_status(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.post(f"{Config.URL_PREFIX}/reset-db", name="reset_db")
+# NOTE: This endpoint should ideally be a POST request. However, it is set as a GET request
+# to allow easy triggering from free monitoring/cron services that only support GET.
+@router.get(f"{Config.URL_PREFIX}/reset-db", name="reset_db")
 async def reset_db():
     """
     Completely reset the database by deleting the SQLite database file
