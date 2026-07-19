@@ -1,0 +1,57 @@
+name: Backend — Deploy to Render
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Webhook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          TRIGGER_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "========================================"
+          echo "  Triggering Render deployment..."
+          echo "  Time: $TRIGGER_TIME"
+          echo "========================================"
+          curl -sf -X POST "$DEPLOY_HOOK_URL"
+          echo "  Webhook fired successfully."
+
+      - name: Wait for backend to become healthy
+        run: |
+          HEALTH_URL="https://users-module.onrender.com/api-status"
+          MAX_WAIT=180     # 3 minutes
+          INTERVAL=15
+          ELAPSED=0
+          START=$(date +%s)
+
+          echo "  Polling $HEALTH_URL every ${INTERVAL}s (timeout: ${MAX_WAIT}s)..."
+          echo ""
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            STATUS=$(curl -sf "$HEALTH_URL" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
+
+            if [ "$STATUS" = "HEALTHY" ]; then
+              END=$(date +%s)
+              echo "========================================"
+              echo "  ✅  Backend is HEALTHY"
+              echo "  Time to healthy: $((END - START))s"
+              echo "========================================"
+              exit 0
+            fi
+
+            echo "  [${ELAPSED}s] Not healthy yet (status='$STATUS'). Retrying in ${INTERVAL}s..."
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "========================================"
+          echo "  ❌  Backend did not become healthy within ${MAX_WAIT}s"
+          echo "========================================"
+          exit 1

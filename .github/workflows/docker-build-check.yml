@@ -1,0 +1,33 @@
+name: Docker — Build Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
+
+jobs:
+  build-smoke-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (smoke test — no push)
+        run: |
+          echo "========================================"
+          echo "  Starting Docker build smoke test..."
+          echo "========================================"
+          START=$(date +%s)
+          docker build BACKEND/ --file BACKEND/Dockerfile --tag test-image:build-check
+          END=$(date +%s)
+          echo ""
+          echo "========================================"
+          echo "  Build completed in $((END - START))s"
+          echo "  Image: test-image:build-check (not pushed)"
+          echo "========================================"

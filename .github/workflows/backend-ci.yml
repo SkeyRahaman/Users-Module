@@ -1,0 +1,51 @@
+name: Backend — Run Lint and Tests on Push
+
+on:
+  push:
+    paths:
+      - 'BACKEND/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f BACKEND/requirements.txt ]; then pip install -r BACKEND/requirements.txt; fi
+          if [ -f BACKEND/requirements-test.txt ]; then pip install -r BACKEND/requirements-test.txt; fi
+
+      - name: Lint with flake8
+        run: |
+          # Fail on syntax errors or undefined names
+          flake8 BACKEND/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Warnings only for complexity / line length
+          flake8 BACKEND/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        env:
+          PYTHONPATH: ${{ github.workspace }}/BACKEND
+        run: |
+          cd BACKEND
+          START=$(date +%s)
+          pytest --durations=10 -q 2>&1 | tee /tmp/pytest_output.txt
+          END=$(date +%s)
+          echo ""
+          echo "========================================"
+          echo "  Test duration: $((END - START))s"
+          PASSED=$(grep -oP '\d+(?= passed)' /tmp/pytest_output.txt || echo 0)
+          FAILED=$(grep -oP '\d+(?= failed)' /tmp/pytest_output.txt || echo 0)
+          echo "  Passed: $PASSED  |  Failed: $FAILED"
+          echo "========================================"

@@ -1,0 +1,52 @@
+name: Docker — Build & Publish to Docker Hub
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
+          echo "========================================"
+          echo "  Building image: $IMAGE_TAG"
+          echo "========================================"
+          START=$(date +%s)
+          docker build BACKEND/ --file BACKEND/Dockerfile --tag $IMAGE_TAG
+          END=$(date +%s)
+          echo ""
+          echo "  Build duration: $((END - START))s"
+          SIZE=$(docker image inspect $IMAGE_TAG --format='{{.Size}}' | awk '{printf "%.1f MB", $1/1024/1024}')
+          echo "  Uncompressed image size: $SIZE"
+          echo "========================================"
+
+      - name: Push versioned tag
+        run: |
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
+          docker push $IMAGE_TAG
+          echo "  Pushed: $IMAGE_TAG"
+
+      - name: Tag as latest and push
+        run: |
+          IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
+          docker tag $IMAGE_TAG sakibmondal7/users_module:latest
+          docker push sakibmondal7/users_module:latest
+          echo "========================================"
+          echo "  Published tags:"
+          echo "    sakibmondal7/users_module:V${{ github.run_number }}"
+          echo "    sakibmondal7/users_module:latest"
+          echo "========================================"

@@ -1,10 +1,8 @@
-name: Deploy Frontend to GitHub Pages
+name: Frontend — Build & Deploy to GitHub Pages
 
 on:
   push:
     branches: ["main"]
-
-  # Allow manual trigger from Actions tab
   workflow_dispatch:
 
 permissions:
@@ -37,7 +35,16 @@ jobs:
 
       - name: Build
         working-directory: FRONTEND
-        run: npm run build
+        run: |
+          START=$(date +%s)
+          npm run build
+          END=$(date +%s)
+          echo ""
+          echo "========================================"
+          echo "  Build duration: $((END - START))s"
+          BUNDLE_SIZE=$(du -sh dist | cut -f1)
+          echo "  Bundle size (dist/): $BUNDLE_SIZE"
+          echo "========================================"
         env:
           VITE_API_URL: https://users-module.onrender.com
 
@@ -56,3 +63,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Report deployment URL
+        run: |
+          echo "========================================"
+          echo "  ✅  Frontend deployed successfully"
+          echo "  Live URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "========================================"
