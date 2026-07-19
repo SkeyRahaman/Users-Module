@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { LogIn, KeyRound, User as UserIcon, Settings2, ShieldCheck } from 'lucide-react';
+import { LogIn, KeyRound, User as UserIcon, Settings2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { loginSchema } from '../utils/validators.js';
 import Input from '../components/ui/Input.jsx';
@@ -97,6 +97,16 @@ export default function LoginPage() {
       {/* Right Panel */}
       <div className="auth-form-panel">
         <MobileAuthHeader />
+
+        <div className="demo-banner animate-slide-down" style={{ marginBottom: '1.25rem' }}>
+          <div className="demo-banner-icon"><Sparkles size={16} /></div>
+          <div className="demo-banner-body">
+            <p className="demo-banner-title">Demo Mode — Signing you in automatically</p>
+            <p className="demo-banner-text">
+              This is a portfolio demo. No account needed — logging you in as <strong>admin</strong> right away.
+            </p>
+          </div>
+        </div>
 
         <div className="auth-form-card animate-slide-up">
           <div className="auth-form-header">
