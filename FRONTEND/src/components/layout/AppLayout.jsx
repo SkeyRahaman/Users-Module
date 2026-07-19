@@ -1,9 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
 import { healthApi } from '../../api/permissions.js';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Sparkles, X, Copy, Check } from 'lucide-react';
+
+/** Demo mode banner — survives the auto-login redirect for 15 s */
+function DemoBanner({ onDismiss }) {
+  const [visible, setVisible] = useState(true);
+  const [copied, setCopied] = useState(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => {
+      setVisible(false);
+      onDismiss?.();
+    }, 15000);
+    return () => clearTimeout(timerRef.current);
+  }, [onDismiss]);
+
+  const handleDismiss = () => {
+    clearTimeout(timerRef.current);
+    setVisible(false);
+    onDismiss?.();
+  };
+
+  const copyToClipboard = async (text, type) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(type);
+      setTimeout(() => setCopied(null), 1500);
+    } catch { /* ignore */ }
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="demo-banner animate-slide-down">
+      <div className="demo-banner-icon"><Sparkles size={16} /></div>
+      <div className="demo-banner-body">
+        <p className="demo-banner-title">Demo Mode — You're automatically signed in</p>
+        <p className="demo-banner-text">
+          This is a portfolio demo. No account needed — we've logged you in as{' '}
+          <strong>admin</strong> so you can explore everything right away.
+        </p>
+        <div className="demo-banner-creds">
+          <span className="demo-cred-chip">
+            <span className="demo-cred-label">user</span>
+            <code>admin</code>
+            <button className="demo-cred-copy" onClick={() => copyToClipboard('admin', 'user')} title="Copy username">
+              {copied === 'user' ? <Check size={11} /> : <Copy size={11} />}
+            </button>
+          </span>
+          <span className="demo-cred-chip">
+            <span className="demo-cred-label">pass</span>
+            <code>adminpassword</code>
+            <button className="demo-cred-copy" onClick={() => copyToClipboard('adminpassword', 'pass')} title="Copy password">
+              {copied === 'pass' ? <Check size={11} /> : <Copy size={11} />}
+            </button>
+          </span>
+        </div>
+      </div>
+      <button className="demo-banner-close" onClick={handleDismiss} title="Dismiss">
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -11,6 +74,13 @@ export default function AppLayout() {
   const [isBackendWarmingUp, setIsBackendWarmingUp] = useState(false);
   const [warmingProgress, setWarmingProgress] = useState(0);
   const [warningError, setWarningError] = useState(false);
+  const [showDemoBanner, setShowDemoBanner] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('show_demo_banner') === 'true') {
+      setShowDemoBanner(true);
+    }
+  }, []);
 
   // Close mobile sidebar on resize to desktop
   useEffect(() => {
@@ -98,6 +168,16 @@ export default function AppLayout() {
       />
       <Topbar onMobileMenuToggle={() => setIsMobileOpen(!isMobileOpen)} />
       <main className="main-content">
+        {showDemoBanner && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <DemoBanner
+              onDismiss={() => {
+                sessionStorage.removeItem('show_demo_banner');
+                setShowDemoBanner(false);
+              }}
+            />
+          </div>
+        )}
         <Outlet />
       </main>
 
