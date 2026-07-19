@@ -89,6 +89,7 @@ export default function DashboardPage() {
       icon: <Users size={22} />,
       color: 'violet',
       permission: PERMISSIONS.SEARCH_USER,
+      path: '/users',
     },
     {
       id: 'groups',
@@ -97,6 +98,7 @@ export default function DashboardPage() {
       loading: groupsLoading,
       icon: <FolderLock size={22} />,
       color: 'info',
+      path: '/groups',
     },
     {
       id: 'roles',
@@ -105,6 +107,7 @@ export default function DashboardPage() {
       loading: rolesLoading,
       icon: <UserCheck size={22} />,
       color: 'success',
+      path: '/roles',
     },
     {
       id: 'permissions',
@@ -113,6 +116,7 @@ export default function DashboardPage() {
       loading: permissionsLoading,
       icon: <ShieldCheck size={22} />,
       color: 'warning',
+      path: '/permissions',
     },
   ];
 
@@ -130,7 +134,7 @@ export default function DashboardPage() {
       <div className="dashboard-stats">
         {stats.map((stat) => {
           const CardContent = (
-            <div className="stat-card" key={stat.id}>
+            <div className="stat-card" key={stat.id} onClick={() => navigate(stat.path)} style={{ cursor: 'pointer' }}>
               <div className={`stat-card-icon ${stat.color}`}>{stat.icon}</div>
               <div className="stat-card-body">
                 {stat.loading ? (

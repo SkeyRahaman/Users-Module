@@ -6,13 +6,17 @@ import { useAuth } from './AuthContext.jsx';
 const PermissionContext = createContext(null);
 
 export function PermissionProvider({ children }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // Start as `true` only when we have an authenticated user to resolve — this
   // prevents a false "loaded" flash before the first resolve runs.
   const [permissions, setPermissions] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   const resolvePermissions = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       // Not logged in — no permissions, not loading
       setPermissions(new Set());
@@ -59,7 +63,7 @@ export function PermissionProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, authLoading]);
 
   useEffect(() => {
     resolvePermissions();
