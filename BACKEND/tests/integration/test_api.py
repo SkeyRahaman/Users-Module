@@ -14,3 +14,12 @@ async def test_health_check_success(client):
     assert data["version"] == Config.VERSION
 
 
+@pytest.mark.asyncio
+async def test_reset_db_success(client):
+    response = await client.post(f"{Config.URL_PREFIX}/reset-db")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["status"] == "SUCCESS"
+    assert "Database reset completed successfully" in data["message"]
+
+
