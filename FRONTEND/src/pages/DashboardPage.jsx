@@ -156,51 +156,8 @@ export default function DashboardPage() {
 
       {/* Main Grid */}
       <div className="dashboard-grid">
-        {/* Left Column: Chart — admin only */}
-        <Can permission={PERMISSIONS.SEARCH_USER}>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp size={18} /> User Growth Trends
-              </h2>
-            </div>
-
-            <div style={{ width: '100%', height: 300, marginTop: '1rem' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.01} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                  <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-secondary)',
-                      borderColor: 'var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Users"
-                    stroke="var(--accent)"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorUsers)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </Can>
-
         {/* Right Column: Actions / Activity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', gridColumn: '1 / -1' }}>
           {/* Quick Actions — admin only */}
           <Can permission={PERMISSIONS.SEARCH_USER}>
             <div className="card">
@@ -279,6 +236,76 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Coming Soon Section */}
+      <Can permission={PERMISSIONS.SEARCH_USER}>
+        <div className="card" style={{ position: 'relative', overflow: 'hidden' }}>
+          {/* Overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-primary)',
+            opacity: 0.85,
+            backdropFilter: 'blur(2px)'
+          }}>
+            <h2 style={{
+              color: 'var(--text-primary)',
+              fontSize: '2rem',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+            }}>
+              Coming Soon
+            </h2>
+          </div>
+
+          {/* Blurred Content */}
+          <div style={{ filter: 'blur(4px)', pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TrendingUp size={18} /> User Growth Trends
+              </h2>
+            </div>
+
+            <div style={{ width: '100%', height: 300, marginTop: '1rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--bg-secondary)',
+                      borderColor: 'var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Users"
+                    stroke="var(--accent)"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorUsers)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </Can>
     </div>
   );
 }
