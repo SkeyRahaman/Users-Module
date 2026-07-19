@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "74a230ff-f3be-4e36-82ea-70579c16145a",
+    "_postman_id": "abd2c8fe-cdb9-4a79-851d-532b0c526d36",
     "name": "USERS_MODULE",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "37708126"
@@ -565,70 +565,6 @@
               "path": [
                 "users",
                 "{{CREATED_USER_ID}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete user",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// 1. Check if status code is 203",
-                  "pm.test(\"Status code is 202.\", function () {",
-                  "    pm.expect(pm.response.code).to.equal(202);",
-                  "});",
-                  "",
-                  "// 2. Check if response has the exact JSON structure",
-                  "pm.test(\"Response message confirms deletion\", function () {",
-                  "    const response = pm.response.json();",
-                  "    pm.expect(response).to.eql({",
-                  "        \"Message\": \"User Deleted.\"",
-                  "    });",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{TOKEN}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "disabled": true
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text",
-                "disabled": true
-              }
-            ],
-            "url": {
-              "raw": "{{HOST_URL}}/users/me",
-              "host": [
-                "{{HOST_URL}}"
-              ],
-              "path": [
-                "users",
-                "me"
               ]
             }
           },
@@ -1765,6 +1701,70 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Delete user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 1. Check if status code is 203",
+                  "pm.test(\"Status code is 202.\", function () {",
+                  "    pm.expect(pm.response.code).to.equal(202);",
+                  "});",
+                  "",
+                  "// 2. Check if response has the exact JSON structure",
+                  "pm.test(\"Response message confirms deletion\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.eql({",
+                  "        \"Message\": \"User Deleted.\"",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{HOST_URL}}/users/me",
+              "host": [
+                "{{HOST_URL}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -2741,65 +2741,6 @@
                   "key": "role_id",
                   "value": "{{TEST_ROLE_ID}}"
                 }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE Permission by ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 202\", function () {",
-                  "    pm.response.to.have.status(202);",
-                  "});",
-                  "",
-                  "pm.test(\"Response body contains deletion message\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.eql({ message: \"Permission deleted\" });",
-                  "});",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{TOKEN}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{HOST_URL}}/permissions/{{TEST_PERMISSION_ID}}",
-              "host": [
-                "{{HOST_URL}}"
-              ],
-              "path": [
-                "permissions",
-                "{{TEST_PERMISSION_ID}}"
               ]
             }
           },
@@ -4098,66 +4039,6 @@
                 "groups",
                 "name",
                 "{{TEST_GROUP_NAME}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE group by ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 202\", function () {",
-                  "    pm.response.to.have.status(202);",
-                  "});",
-                  "",
-                  "pm.test(\"Response body contains deletion message\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.eql({ message: \"Group deleted\" });",
-                  "});",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{ADMIN_TOKEN}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{HOST_URL}}/groups/{{TEST_GROUP_ID}}",
-              "host": [
-                "{{HOST_URL}}"
-              ],
-              "path": [
-                "groups",
-                "{{TEST_GROUP_ID}}"
               ]
             }
           },
@@ -5871,6 +5752,130 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cleanup & Deletions",
+      "item": [
+        {
+          "name": "DELETE Permission by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains deletion message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.eql({ message: \"Permission deleted\" });",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{HOST_URL}}/permissions/{{TEST_PERMISSION_ID}}",
+              "host": [
+                "{{HOST_URL}}"
+              ],
+              "path": [
+                "permissions",
+                "{{TEST_PERMISSION_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE group by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body contains deletion message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.eql({ message: \"Group deleted\" });",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ADMIN_TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{HOST_URL}}/groups/{{TEST_GROUP_ID}}",
+              "host": [
+                "{{HOST_URL}}"
+              ],
+              "path": [
+                "groups",
+                "{{TEST_GROUP_ID}}"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "DELETE roles by ID",
@@ -5932,70 +5937,6 @@
           "response": []
         }
       ]
-    },
-    {
-      "name": "Delete user Copy",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "// 1. Check if status code is 203",
-              "pm.test(\"Status code is 202.\", function () {",
-              "    pm.expect(pm.response.code).to.equal(202);",
-              "});",
-              "",
-              "// 2. Check if response has the exact JSON structure",
-              "pm.test(\"Response message confirms deletion\", function () {",
-              "    const response = pm.response.json();",
-              "    pm.expect(response).to.eql({",
-              "        \"Message\": \"User Deleted.\"",
-              "    });",
-              "});"
-            ],
-            "type": "text/javascript",
-            "packages": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{TOKEN}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text",
-            "disabled": true
-          },
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text",
-            "disabled": true
-          }
-        ],
-        "url": {
-          "raw": "{{HOST_URL}}/users/me",
-          "host": [
-            "{{HOST_URL}}"
-          ],
-          "path": [
-            "users",
-            "me"
-          ]
-        }
-      },
-      "response": []
     }
   ],
   "event": [
