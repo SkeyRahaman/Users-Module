@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { loginSchema } from '../utils/validators.js';
 import Input from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
+import MobileAuthHeader from '../components/auth/MobileAuthHeader.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -76,6 +77,7 @@ export default function LoginPage() {
 
       {/* Right Panel */}
       <div className="auth-form-panel">
+        <MobileAuthHeader />
         <div className="auth-form-card animate-slide-up">
           <div className="auth-form-header">
             <h1 className="auth-form-title">Welcome back</h1>

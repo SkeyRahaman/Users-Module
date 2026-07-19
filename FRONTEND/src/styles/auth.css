@@ -258,4 +258,25 @@
   .auth-form-row {
     grid-template-columns: 1fr;
   }
+  .mobile-auth-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .mobile-auth-header .auth-logo {
+    margin-bottom: 0.5rem;
+  }
+  .mobile-auth-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+    margin-top: -0.25rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-auth-header {
+    display: none;
+  }
 }

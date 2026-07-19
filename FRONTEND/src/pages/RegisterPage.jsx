@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { registerSchema } from '../utils/validators.js';
 import Input from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
+import MobileAuthHeader from '../components/auth/MobileAuthHeader.jsx';
 
 export default function RegisterPage() {
   const { register: authRegister } = useAuth();
@@ -32,7 +33,7 @@ export default function RegisterPage() {
       setIsSuccess(true);
       toast.success('Registration successful!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Registration failed. Try another username/email.');
+      toast.error(err.response?.data?.detail || 'Registration failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -61,6 +62,7 @@ export default function RegisterPage() {
 
       {/* Right Panel */}
       <div className="auth-form-panel">
+        <MobileAuthHeader />
         <div className="auth-form-card animate-slide-up">
           {isSuccess ? (
             <div className="auth-success-card animate-scale-in">
