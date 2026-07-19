@@ -3,6 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
 
 jobs:
   build:
@@ -21,7 +23,7 @@ jobs:
         run: |
           # Use the GitHub run number as a simple incrementing tag
           IMAGE_TAG=sakibmondal7/users_module:V${{ github.run_number }}
-          docker build . --file Dockerfile --tag $IMAGE_TAG
+          docker build BACKEND/ --file BACKEND/Dockerfile --tag $IMAGE_TAG
 
       - name: Push Docker image
         run: |

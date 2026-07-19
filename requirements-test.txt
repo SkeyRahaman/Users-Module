@@ -1,6 +1,0 @@
-pytest
-pytest-mock
-httpx
-aiosqlite
-pytest-asyncio
-greenlet

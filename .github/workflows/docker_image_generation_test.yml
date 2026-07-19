@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'BACKEND/**'
 
 jobs:
   build:
@@ -15,4 +19,4 @@ jobs:
 
       - name: Build Docker image (test only)
         run: |
-          docker build . --file Dockerfile --tag test-image:build-check
+          docker build BACKEND/ --file BACKEND/Dockerfile --tag test-image:build-check

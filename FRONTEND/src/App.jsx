@@ -48,7 +48,7 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <PermissionProvider>
-            <BrowserRouter>
+            <BrowserRouter basename="/Users-Module">
               <Routes>
                 {/* Public Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />
