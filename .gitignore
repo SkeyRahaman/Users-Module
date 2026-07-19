@@ -1,6 +1,7 @@
 /.pytest_cache
 /.venv
 /.vscode
+/venv
 
 # macOS
 .DS_Store
@@ -8,3 +9,6 @@
 # Local scratch / logs
 logs/
 t.py
+
+# Postman collection (local only — not tracked in git)
+*.postman_collection.json
