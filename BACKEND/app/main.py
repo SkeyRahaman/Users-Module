@@ -18,7 +18,6 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "https://skeyrahaman.github.io",
     ],
-    allow_origin_regex="http://.*", # Allow all http origins (such as local network IPs)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
