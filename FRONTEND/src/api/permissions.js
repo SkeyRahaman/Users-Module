@@ -58,14 +58,15 @@ export const permissionsApi = {
   },
 };
 
-/** GET /health — public.
+/** GET /api-status — public.
  * Uses plain axios (no custom headers) so this is a "simple" CORS request.
  * Brave blocks preflight (OPTIONS) for cross-origin requests with custom headers,
  * so we deliberately bypass apiClient here to avoid Content-Type / Authorization headers.
+ * Returns database connectivity status, server uptime (up_from), and version.
  */
 export const healthApi = {
   check: async () => {
-    const response = await axios.get(`${API_BASE_URL}/health`);
+    const response = await axios.get(`${API_BASE_URL}/api-status`);
     return response.data;
   },
 };

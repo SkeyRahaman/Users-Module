@@ -12,3 +12,5 @@ async def test_health_check_success(client):
     assert "timestamp" in data
     assert "version" in data
     assert data["version"] == Config.VERSION
+
+
