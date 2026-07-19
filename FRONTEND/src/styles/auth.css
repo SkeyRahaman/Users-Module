@@ -280,3 +280,139 @@
     display: none;
   }
 }
+
+/* ── Demo Mode Banner ─────────────────────────────────────── */
+.demo-banner {
+  width: 100%;
+  max-width: 440px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    hsla(38, 90%, 52%, 0.08) 0%,
+    hsla(38, 80%, 40%, 0.05) 100%
+  );
+  border: 1px solid hsla(38, 85%, 55%, 0.3);
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.demo-banner-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: hsla(38, 90%, 52%, 0.15);
+  border: 1px solid hsla(38, 85%, 55%, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(38, 90%, 60%);
+  margin-top: 0.05rem;
+}
+
+.demo-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.demo-banner-title {
+  font-size: 0.8rem;
+  font-weight: var(--font-semibold);
+  color: hsl(38, 85%, 65%);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.01em;
+}
+
+.demo-banner-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+
+.demo-banner-text strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.demo-banner-creds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.demo-cred-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: hsla(38, 80%, 52%, 0.08);
+  border: 1px solid hsla(38, 75%, 55%, 0.2);
+  font-size: 0.75rem;
+}
+
+.demo-cred-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.demo-cred-chip code {
+  color: hsl(38, 85%, 68%);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  background: none;
+  padding: 0;
+}
+
+.demo-cred-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.1rem;
+  border-radius: 3px;
+  transition: color 0.15s;
+}
+
+.demo-cred-copy:hover {
+  color: hsl(38, 85%, 65%);
+}
+
+.demo-banner-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.15rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.demo-banner-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+/* slide-down entrance for banner */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out both;
+}
