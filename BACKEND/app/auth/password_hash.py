@@ -1,7 +1,12 @@
 from passlib.context import CryptContext
 
 class PasswordHasher:
-    _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    # We set deprecated="auto" and define bcrypt context
+    _pwd_context = CryptContext(
+        schemes=["bcrypt"],
+        deprecated="auto",
+        bcrypt__min_rounds=12
+    )
 
     @staticmethod
     def get_password_hash(password: str) -> str:
