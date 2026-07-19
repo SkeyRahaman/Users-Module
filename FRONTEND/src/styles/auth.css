@@ -416,3 +416,19 @@
 .animate-slide-down {
   animation: slideDown 0.3s ease-out both;
 }
+
+/* Mobile: icon only */
+@media (max-width: 480px) {
+  .demo-banner {
+    width: fit-content;
+    padding: 0.5rem;
+    gap: 0;
+  }
+  .demo-banner-body,
+  .demo-banner-close {
+    display: none;
+  }
+  .demo-banner-icon {
+    margin-top: 0;
+  }
+}
