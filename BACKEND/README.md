@@ -37,6 +37,7 @@ This module provides a complete identity foundation ready to be dropped into any
 - **Structured Logging**: Built with `structlog` for machine-readable JSON logs across services.
 - **Correlation ID Middleware**: Automatically traces requests end-to-end (`LogCorrelationIdMiddleware`).
 - **Health Checks**: Instant container health validation endpoint (`/health`).
+- **Prometheus Metrics**: Automated application and HTTP request metric monitoring endpoint (`/metrics`).
 - **Docker Ready**: Complete `docker-compose.yaml` setup running FastAPI alongside a healthy PostgreSQL 15 container.
 
 ---
@@ -164,6 +165,7 @@ Users-Module/
 
 4. **Verify the installation**:
    - Application Health Check: [http://localhost:8000/health](http://localhost:8000/health)
+   - Prometheus Metrics: [http://localhost:8000/metrics](http://localhost:8000/metrics)
    - Interactive Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc Documentation: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
@@ -242,6 +244,14 @@ Below is a summary of the core REST endpoints provided by the module.
 | `POST` | `/groups/{id}/add_user` | Add a member to a group |
 | `POST` | `/groups/{id}/remove_user` | Remove a member from a group |
 | `POST` | `/groups/{id}/assigne_role` | Assign a role to all members of a group |
+
+### 🏥 System & Observability (`/health` & `/metrics`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Instant health check returning container health status |
+| `GET` | `/api-status` | Extended health check with database reachability and uptime |
+| `GET` | `/metrics` | Prometheus metrics scraping endpoint with HTTP request & system stats |
+| `HEAD` | `/reset-db` | Reset and re-migrate the database |
 
 ---
 
