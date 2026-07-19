@@ -10,7 +10,9 @@ app = FastAPI(
     version=Config.VERSION
 )
 
-# Enable CORS for frontend requests
+app.add_middleware(LogCorrelationIdMiddleware)
+
+# Enable CORS for frontend requests — registered last so it executes FIRST on incoming requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -22,8 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(LogCorrelationIdMiddleware)
 
 app.include_router(health.router)
 app.include_router(auth.router)
