@@ -1,4 +1,6 @@
+import axios from 'axios';
 import apiClient from './client.js';
+import { API_BASE_URL } from '../utils/constants.js';
 
 export const permissionsApi = {
   /** POST /permissions/ */
@@ -56,10 +58,14 @@ export const permissionsApi = {
   },
 };
 
-/** GET /health — public */
+/** GET /health — public.
+ * Uses plain axios (no custom headers) so this is a "simple" CORS request.
+ * Brave blocks preflight (OPTIONS) for cross-origin requests with custom headers,
+ * so we deliberately bypass apiClient here to avoid Content-Type / Authorization headers.
+ */
 export const healthApi = {
   check: async () => {
-    const response = await apiClient.get('/health');
+    const response = await axios.get(`${API_BASE_URL}/health`);
     return response.data;
   },
 };
